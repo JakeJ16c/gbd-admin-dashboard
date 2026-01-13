@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Updated Font Awesome CDN with integrity and crossorigin attributes -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" 
+        integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" 
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <!-- Manifest -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <!-- Minimum required for iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="./IMG_8861.png">
+
+  <!-- Added favicon link -->
+  <link rel="icon" href="./favicon_circle.ico" type="image/x-icon">
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    .dashboard-sections {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      padding: 2rem;
+    }
+  
+    .dashboard-card {
+      flex: 1 1 300px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+  
+    .dashboard-card h2 {
+      color: var(--electric-blue);
+      margin-bottom: 1rem;
+    }
+  
+    .dashboard-card ul {
+      list-style: none;
+      padding: 0;
+    }
+  
+    .dashboard-card li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #eee;
+    }
+  
+    .dashboard-card li.urgent {
+      color: red;
+      font-weight: bold;
+    }
+
+    .products-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-left: 20px;
+      background-color: #f8f8f8;
+      border-bottom: 1px solid #eee;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+    
+    .product-list {
+      padding: 1.5rem;
+    }
+
+    .dashboard-card li.urgent {
+      color: red;
+      font-weight: bold;
+    }
+
+    .order-status-pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background-color: #eee;
+      color: #444;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-left: 10px;
+      text-transform: capitalize;
+      white-space: nowrap;
+    }
+
+    .add-promo-btn {
+        background-color: var(--electric-blue);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 12px 15px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-right: 10px;
+    }
+
+    .modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .modal.hidden { display: none; }
+    .modal-content {
+      position: relative;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      width: 300px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .modal-content input, .modal-content select {
+      width: 100%;
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      border-radius: 8px;
+    }
+    .modal-content button {
+      background: var(--primary-color);
+      color: #204ECF;
+      border: none;
+      padding: 0.6rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .close {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      cursor: pointer;
+      font-size: 1.5rem;
+      color: #444;
+    }
+
+    @media (max-width: 768px) {
+  .order-swipe {
+    touch-action: pan-y;
+    transition: transform 0.2s ease;
+    will-change: transform;
+    position: relative;
+  }
+
+  .order-swipe.swiping {
+    transition: none;
+  }
+}
+  </style>
+
+</head>
+<body>
+
+  <header>
+    <button class="menu-toggle" id="menu-toggle">
+      <i class="fa-solid fa-bars"></i> Menu
+    </button>
+    <h1>You're So Golden Admin</h1>
+  </header>
+
+  <div class="sidebar" id="sidebar">
+    <h2>Welcome, Daisy</h2>
+    <a href="index.html"><i class="fas fa-house"></i> Home</a>
+    <a href="products.html"><i class="fas fa-store"></i> Product Management</a>
+    <a href="orders.html"><i class="fas fa-box"></i> Order Management</a>
+    <a href="analytics.html"><i class="fas fa-chart-line"></i> Analytics</a>
+    <a href="index.html"><i class="fas fa-receipt"></i> Expenses</a>
+    <a href="reviews.html"><i class="fa-solid fa-star"></i> Reviews</a>
+    <a href="site-design.html"><i class="fas fa-paint-brush"></i> Site Design</a>
+    <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
+    <a href="#"><i class="fas fa-sign-out-alt"></i> Log Out</a>
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+
+  <main>
+      <!-- Admin Dashboard Summary Layout -->
+      <div class="dashboard-sections">
+        
+        <!-- Stock Counter Section -->
+        <section class="dashboard-card" id="stock-counter">
+          <div class="products-header">
+          <h2><i class="fas fa-warehouse"></i> Stock Counter</h2>
+          </div>  
+          <div id="stock-counter-list" class="product-list"></div>
+        </section>
+
+        <!-- Messages Section -->
+        <section class="dashboard-card" id="admin-messages">
+          <div class="products-header">
+            <h2><i class="fas fa-envelope"></i> My Messages</h2>
+          </div>
+          <div class="product-list">
+            <p>Under Development</p>
+          </div>
+        </section>
+      
+        <!-- My Orders Section -->
+        <section class="dashboard-card" id="admin-orders">
+          <div class="products-header">
+            <h2><i class="fas fa-clipboard-list"></i> My Orders</h2>
+          </div>
+          <div class="product-list">
+            <ul id="order-list"></ul>
+          </div>
+        </section>
+
+        <!-- Promo Codes Section -->
+        <section class="dashboard-card" id="admin-promo">
+          <div class="products-header">
+            <h2><i class="fa-solid fa-tag"></i> Promo Codes</h2>
+            <button class="add-promo-btn" id="addPromoBtn">
+              <i class="fas fa-plus"></i> Promo Code
+            </button>
+          </div>
+          <div class="product-list">
+            <ul id="promo-list">
+              <li>No Promo Codes</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- Todays Stats Section -->
+        <section class="dashboard-card" id="admin-messages">
+          <div class="products-header">
+            <h2>Discount Codes</h2>
+          </div>
+          <div class="product-list">
+            <p>Under development.</p>
+          </div>
+        </section>
+
+        <!-- Waiting List Section -->
+        <section class="dashboard-card" id="admin-waitinglist">
+          <div class="products-header">
+            <h2 style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <span>Waiting List</span>
+              <span id="waitingListCount" style="font-weight: 500; font-size: 1.2rem; padding-right: 20px;">Counter: ...</span>
+            </h2>
+          </div>
+          <div class="product-list">
+            <ul id="waitingListNames" style="padding-left: 1rem; list-style: disc; margin-top: 0.5rem;"></ul>
+          </div>
+        </section>
+        
+      </div>
+
+    <!-- Promo Code Modal -->
+    <div class="modal hidden" id="promoModal">
+      <div class="modal-content">
+        <span class="close" id="closePromoModal">&times;</span>
+        <h3>Add Promo Code</h3>
+        <input type="text" id="promoCode" placeholder="Code (e.g. SUMMER25)" />
+        <input type="number" id="promoDiscount" placeholder="Discount (e.g. 25)" />
+        
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <input type="number" id="promoMinSpend" placeholder="Minimum Spend (£)" style="width: 70%;" />
+          <label style="display: flex; align-items: center; gap: 4px;">
+            <input type="checkbox" id="noMinSpend" checked />
+            No Min
+          </label>
+        </div>
+
+        <select id="promoType">
+          <option value="percentage">Percentage (%)</option>
+          <option value="fixed">Fixed Amount (£)</option>
+        </select>
+        <button id="savePromo">Save Promo</button>
+      </div>
+    </div>
+    
+  </main>
+
+  <!-- Admin Auth Script (handles login gating) -->
+  <script type="module" src="admin-auth.js"></script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js')
+        .then((reg) => {
+          console.log("✅ Service Worker registered with scope:", reg.scope);
+        })
+        .catch((err) => {
+          console.error("❌ Service Worker registration failed:", err);
+        });
+    }
+  </script>
+
+  <!-- Dashboard Interactions -->
+  <script>
+    const menuToggle = document.getElementById('menu-toggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+
+    menuToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('show');
+      overlay.classList.toggle('show');
+    });
+
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('show');
+      overlay.classList.remove('show');
+    });
+    
+    // Added script to verify Font Awesome loading
+    window.addEventListener('DOMContentLoaded', () => {
+      // Check if Font Awesome is loaded
+      const style = window.getComputedStyle(document.querySelector('.fa-bars'));
+      const fontFamily = style.getPropertyValue('font-family');
+      
+      if (!fontFamily.includes('Font Awesome') && !fontFamily.includes('FontAwesome')) {
+        console.warn('Font Awesome may not be loading correctly. Font family detected:', fontFamily);
+        
+        // Attempt to reload Font Awesome
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css';
+        link.integrity = 'sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==';
+        link.crossOrigin = 'anonymous';
+        link.referrerPolicy = 'no-referrer';
+        document.head.appendChild(link);
+      }
+    });
+  </script>
+
+  <script type="module">
+    import { db } from './firebase.js';
+    import { onSnapshot, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js';
+
+    async function loadStockCounter() {
+    const container = document.getElementById('stock-counter-list');
+    container.innerHTML = '';
+  
+    const snap = await getDocs(collection(db, 'Products'));
+    if (snap.empty) {
+      container.innerHTML = '<p>No products found.</p>';
+      return;
+    }
+  
+    snap.forEach(doc => {
+      const d = doc.data();
+      const stock = d.stock || {};
+      const imageUrl = d.images?.[0];
+  
+      const item = document.createElement('div');
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.marginBottom = '1rem';
+      item.style.gap = '1rem';
+  
+      item.innerHTML = `
+        <img src="${imageUrl}" alt="${d.name}" style="width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd;" />
+        <div>
+          <strong style="font-size: 1rem;">${d.name}</strong><br />
+          ${
+            typeof stock === 'number'
+              ? `<span style="color: #888;">Stock: ${stock}</span>`
+              : Object.entries(stock).map(([size, qty]) => `<span style="color: #888; font-size: 0.85rem;">${size}: ${qty}</span>`).join('<br/>')
+          }
+        </div>
+      `;
+  
+      container.appendChild(item);
+    });
+  }
+  
+    loadStockCounter();
+
+async function loadOrders() {
+  const orderList = document.getElementById("order-list");
+  orderList.innerHTML = "";
+
+  const snap = await getDocs(collection(db, 'Orders'));
+  const now = new Date();
+
+  function formatTimeAgo(date) {
+    const seconds = Math.floor((now - date) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
+
+  snap.forEach(doc => {
+    const data = doc.data();
+
+      if (data.dashboardHidden) return; // ❌ Skip if hidden on dashboard
+    const createdAtRaw = data.createdAt;
+
+    let orderDate;
+    if (createdAtRaw?.toDate) {
+      orderDate = createdAtRaw.toDate();
+    } else if (typeof createdAtRaw === 'string') {
+      const cleaned = createdAtRaw.replace(' at ', ' ').replace(/ UTC[+-]\d+/, '');
+      orderDate = new Date(cleaned);
+    }
+
+    let timeDiffText = 'unknown time';
+    if (orderDate instanceof Date && !isNaN(orderDate)) {
+      timeDiffText = formatTimeAgo(orderDate);
+    }
+
+    // ✅ Dynamic badge + card coloring
+      const bgColor = {
+        Confirmed: '#cce5ff',
+        Cancelled: '#f8d7da',
+        Ready: '#fff3cd',
+        Dispatched: '#d1ecf1',
+        Delivered: '#d4edda'
+      }[data.status] || '#eee';
+
+        const textColor = {
+          Confirmed: '#004085',
+          Cancelled: '#721c24',
+          Ready: '#856404',
+          Dispatched: '#0c5460',
+          Delivered: '#155724'
+        };
+
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <a href="orders.html?orderId=${doc.id}" style="text-decoration: none; color: inherit;">
+          Order No. <strong>${data.orderNumber || 'Unknown'}</strong> – <em>${timeDiffText}</em>
+        </a>
+        <span class="order-status-pill" style="background-color: ${bgColor}; color: ${textColor};">${(data.status || 'N/A')}</span>        
+      </div>
+    `;
+
+    if (!isNaN(Date.parse(orderDate)) && (new Date() - orderDate) > 2.5 * 24 * 60 * 60 * 1000) {
+      li.classList.add("urgent");
+    }
+
+    orderList.appendChild(li);
+  });
+}
+  
+  loadOrders().then(() => {
+  enableMobileSwipePreview('#order-list li');
+});
+
+  function enableMobileSwipePreview(selector) {
+  const elements = document.querySelectorAll(selector);
+  elements.forEach((el) => {
+    let startX = 0;
+    let currentX = 0;
+    let swiping = false;
+
+    el.classList.add('order-swipe');
+
+    el.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+      swiping = true;
+      el.classList.add('swiping');
+    });
+
+    el.addEventListener('touchmove', e => {
+      if (!swiping) return;
+      currentX = e.touches[0].clientX;
+      const deltaX = currentX - startX;
+      if (deltaX > 0) {
+        el.style.transform = `translateX(${deltaX}px)`;
+      }
+    });
+
+    el.addEventListener('touchend', async () => {
+      const deltaX = currentX - startX;
+      swiping = false;
+      el.classList.remove('swiping');
+
+      if (deltaX > 100) {
+        el.style.transition = 'transform 0.3s ease';
+        el.style.transform = 'translateX(100%)';
+
+        const orderText = el.querySelector("a")?.href || "";
+        const orderIdMatch = orderText.match(/orderId=([^&]+)/);
+        const orderId = orderIdMatch?.[1];
+
+        if (orderId) {
+          try {
+            await updateDoc(doc(db, "Orders", orderId), {
+              dashboardHidden: true
+            });
+            el.remove(); // Remove visually
+          } catch (err) {
+            console.error("❌ Failed to hide order on dashboard", err);
+          }
+        }
+      } else {
+        el.style.transform = '';
+      }
+    });
+
+    el.addEventListener('touchcancel', () => {
+      el.style.transform = '';
+      el.classList.remove('swiping');
+      swiping = false;
+    });
+  });
+}
+
+async function loadPromoCodes() {
+  const promoList = document.getElementById("promo-list");
+  promoList.innerHTML = "";
+
+  const snap = await getDocs(collection(db, 'PromoCodes'));
+  if (snap.empty) {
+    promoList.innerHTML = "<li>No Promo Codes</li>";
+    return;
+  }
+
+  snap.forEach(doc => {
+    const d = doc.data();
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span>
+        <strong>${d.code}</strong> - ${d.discount}${d.type === "percentage" ? "%" : "£"} off
+      </span>
+      <button class="delete-promo" data-id="${doc.id}" style="background:none;border:none;float:right;cursor:pointer;">
+        <i class="fas fa-trash-alt" style="color:#d9534f;"></i>
+      </button>
+    `;
+    promoList.appendChild(li);
+  });
+}
+
+async function savePromoCode() {
+  const code = document.getElementById("promoCode").value.trim();
+  const discount = parseFloat(document.getElementById("promoDiscount").value);
+  const type = document.getElementById("promoType").value;
+  const noMin = document.getElementById("noMinSpend").checked;
+  const minSpendInput = parseFloat(document.getElementById("promoMinSpend").value);
+  const minSpend = noMin ? 0 : (isNaN(minSpendInput) ? 0 : minSpendInput);
+
+  if (!code || !discount || isNaN(discount)) return alert("Please enter all fields correctly.");
+
+  await addDoc(collection(db, "PromoCodes"), {
+    code,
+    discount,
+    type,
+    minSpend
+  });
+
+  document.getElementById("promoModal").classList.add("hidden");
+  loadPromoCodes();
+}
+
+// Event listeners
+
+document.getElementById("addPromoBtn").addEventListener("click", () => {
+  document.getElementById("promoModal").classList.remove("hidden");
+});
+
+document.getElementById("closePromoModal").addEventListener("click", () => {
+  document.getElementById("promoModal").classList.add("hidden");
+});
+
+document.getElementById("savePromo").addEventListener("click", savePromoCode);
+
+document.addEventListener("click", async (e) => {
+  if (e.target.closest(".delete-promo")) {
+    const id = e.target.closest(".delete-promo").dataset.id;
+    const confirmed = confirm("Are you sure you want to delete this promo code?");
+    if (!confirmed) return;
+
+    try {
+      await deleteDoc(doc(db, "PromoCodes", id));
+      loadPromoCodes();
+    } catch (err) {
+      console.error("❌ Failed to delete promo:", err);
+      alert("Failed to delete promo code.");
+    }
+  }
+});
+
+
+loadPromoCodes();
+
+async function loadWaitingList() {
+  const listEl = document.getElementById("waitingListNames");
+  const countEl = document.getElementById("waitingListCount");
+
+  try {
+    const snap = await getDocs(collection(db, "waitinglist"));
+    const names = [];
+
+    snap.forEach(doc => {
+      const data = doc.data();
+      if (data.name) names.push(data.name);
+    });
+
+    listEl.innerHTML = names.length
+      ? names.map(name => `<li>${name}</li>`).join("")
+      : `<li style="color: #888;">No entries yet.</li>`;
+
+    countEl.textContent = `Counter: ${names.length}`;
+  } catch (err) {
+    console.error("❌ Failed to fetch waiting list:", err);
+    listEl.innerHTML = `<li style="color: red;">Error loading list</li>`;
+  }
+}
+
+function animateCounter(el, start, end, duration = 1200) {
+  const range = end - start;
+  let startTime = null;
+
+  function step(timestamp) {
+    if (!startTime) startTime = timestamp;
+    const progress = timestamp - startTime;
+    const percent = Math.min(progress / duration, 1);
+    const current = Math.floor(start + range * percent);
+    el.textContent = `Counter: ${current}`;
+    if (percent < 1) requestAnimationFrame(step);
+  }
+
+  requestAnimationFrame(step);
+}
+
+const counterEl = document.getElementById("waitingListCount");
+let lastCount = 0;
+
+onSnapshot(collection(db, "waitinglist"), (snapshot) => {
+  const newCount = snapshot.size;
+  animateCounter(counterEl, lastCount, newCount);
+  lastCount = newCount;
+});
+
+loadWaitingList();
+</script>
+
+</body>
+</html>

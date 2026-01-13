@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Admin Login - You're So Golden</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <link rel="icon" href="./favicon_circle.ico" type="image/x-icon" />
+
+  <!-- Manifest for installability -->
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css" />
+  
+  <style>
+    /* Admin Login Specific Styles */
+    .login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(248, 243, 234, 0.95);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    .login-container {
+      max-width: 400px;
+      width: 90%;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .login-container h2 {
+      margin-bottom: 1.5rem;
+      color: var(--electric-blue);
+      text-align: center;
+      font-size: 1.8rem;
+    }
+    
+    .login-container input,
+    .login-container button {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.85rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.2rem;
+      font-family: 'Fredoka', sans-serif;
+    }
+    
+    .login-container input {
+      border: 1px solid #ccc;
+      transition: border 0.3s ease;
+    }
+    
+    .login-container input:focus {
+      border-color: var(--electric-blue);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(32, 78, 207, 0.2);
+    }
+    
+    .login-container button {
+      background-color: var(--electric-blue);
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      margin-top: 0.5rem;
+    }
+    
+    .login-container button:hover {
+      background-color: #183aa0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .login-container button:active {
+      transform: translateY(0);
+    }
+    
+    #login-error {
+      color: #e74c3c;
+      font-weight: 500;
+      margin-top: 10px;
+      display: none;
+      text-align: center;
+      padding: 0.5rem;
+      border-radius: 6px;
+      background-color: rgba(231, 76, 60, 0.1);
+    }
+    
+    .login-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .login-header i {
+      font-size: 3rem;
+      color: var(--electric-blue);
+      margin-bottom: 1rem;
+      display: block;
+    }
+    
+    .input-group {
+      position: relative;
+      margin-bottom: 1.2rem;
+    }
+    
+    .input-group i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #999;
+    }
+    
+    .input-group input {
+      padding-left: 40px;
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Admin Login Overlay -->
+  <div class="login-overlay" id="adminLoginOverlay">
+    <div class="login-container">
+      <div class="login-header">
+        <i class="fas fa-user-shield"></i>
+        <h2>Admin Login</h2>
+      </div>
+      
+      <form id="adminLoginForm">
+        <div class="input-group">
+          <i class="fas fa-envelope"></i>
+          <input id="email" type="email" placeholder="Admin Email" required />
+        </div>
+        
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input id="password" type="password" placeholder="Password" required />
+        </div>
+        
+        <button type="submit">
+          <i class="fas fa-sign-in-alt"></i> Secure Login
+        </button>
+        
+        <p id="login-error"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Service Worker for PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+  
+  <!-- Admin Auth Script -->
+  <script type="module" src="admin-auth.js"></script>
+</body>
+</html>
