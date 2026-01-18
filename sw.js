@@ -1,8 +1,4 @@
-// sw.js (GBD Admin Dashboard)
-// - Reliable install (best-effort precache: one missing file won't brick the SW)
-// - Network-first for HTML (avoids getting stuck on stale pages)
-// - Stale-while-revalidate for static assets
-// - FCM background notifications
+// admin/sw.js - stable caching + update flow + FCM background notifications
 
 importScripts('https://www.gstatic.com/firebasejs/11.8.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/11.8.1/firebase-messaging-compat.js');
@@ -18,13 +14,12 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Bump this to force refresh
 const CACHE_VERSION = 'v3';
 const CACHE_NAME = `admin-cache-${CACHE_VERSION}`;
 
 const toUrl = (path) => new URL(path, self.registration.scope).toString();
 
-// Only include files that exist in the admin deployment
+// Only include files that definitely exist in this deployment.
 const PRECACHE_URLS = [
   './index.html',
   './login.html',
@@ -55,15 +50,13 @@ self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
 
-    // Best-effort precache: do NOT fail the whole install if one file 404s
+    // Best-effort precache: never fail install because one file is missing/redirecting.
     await Promise.all(
       PRECACHE_URLS.map(async (url) => {
         try {
           const res = await fetch(new Request(url, { cache: 'reload' }));
           if (res && res.ok) await cache.put(url, res.clone());
-        } catch {
-          // ignore individual failures
-        }
+        } catch {}
       })
     );
 
@@ -79,12 +72,11 @@ self.addEventListener('activate', (event) => {
         .filter(k => k.startsWith('admin-cache-') && k !== CACHE_NAME)
         .map(k => caches.delete(k))
     );
-
     await self.clients.claim();
   })());
 });
 
-// Enables update-popup.js to activate a waiting SW
+// Allow update-popup.js to activate waiting SW immediately
 self.addEventListener('message', (event) => {
   if (event.data && event.data.action === 'skipWaiting') {
     self.skipWaiting();
@@ -112,7 +104,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
 
-    // Network-first for HTML
+    // Network-first for HTML navigations (prevents stale lock-in)
     if (isNavigation) {
       try {
         const fresh = await fetch(req);
@@ -120,7 +112,7 @@ self.addEventListener('fetch', (event) => {
         return fresh;
       } catch {
         const cached = await cache.match(req);
-        return cached || (await cache.match(OFFLINE_FALLBACK));
+        return cached || cache.match(OFFLINE_FALLBACK);
       }
     }
 
@@ -139,8 +131,8 @@ self.addEventListener('fetch', (event) => {
 
 // FCM background notifications
 messaging.onBackgroundMessage((payload) => {
-  const title = payload?.notification?.title || payload?.data?.title || 'You\'re So Golden';
-  const body = payload?.notification?.body || payload?.data?.body || 'You have a new notification';
+  const title = payload?.notification?.title || payload?.data?.title || "You're So Golden";
+  const body = payload?.notification?.body || payload?.data?.body || "You have a new notification";
   const urlToOpen = payload?.data?.url || './index.html';
 
   self.registration.showNotification(title, {
@@ -159,11 +151,9 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil((async () => {
     const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
-
     for (const client of allClients) {
       if (client.url === absoluteTarget && 'focus' in client) return client.focus();
     }
-
     if (clients.openWindow) return clients.openWindow(absoluteTarget);
   })());
 });

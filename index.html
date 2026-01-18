@@ -240,6 +240,19 @@
             <p>Under development.</p>
           </div>
         </section>
+
+        <!-- Waiting List Section -->
+        <section class="dashboard-card" id="admin-waitinglist">
+          <div class="products-header">
+            <h2 style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <span>Waiting List</span>
+              <span id="waitingListCount" style="font-weight: 500; font-size: 1.2rem; padding-right: 20px;">Counter: ...</span>
+            </h2>
+          </div>
+          <div class="product-list">
+            <ul id="waitingListNames" style="padding-left: 1rem; list-style: disc; margin-top: 0.5rem;"></ul>
+          </div>
+        </section>
         
       </div>
 
@@ -270,7 +283,10 @@
   </main>
 
   <!-- Admin Auth Script (handles login gating) -->
-  <script type="module" src="admin-auth.js"></script><!-- Dashboard Interactions -->
+  <script type="module" src="admin-auth.js"></script>
+
+  <script src="update-popup.js"></script>
+<!-- Dashboard Interactions -->
   <script>
     const menuToggle = document.getElementById('menu-toggle');
     const sidebar = document.getElementById('sidebar');
@@ -614,9 +630,6 @@ onSnapshot(collection(db, "waitinglist"), (snapshot) => {
 
 loadWaitingList();
 </script>
-
-
-  <script src="update-popup.js"></script>
 
 </body>
 </html>
