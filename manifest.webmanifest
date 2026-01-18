@@ -1,0 +1,24 @@
+{
+  "name": "Golden By Daisy - Admin",
+  "short_name": "GBD Dashboard",
+  "start_url": "/admin/index.html",
+  "display": "standalone",
+  "background_color": "#204ECF",
+  "theme_color": "#204ECF",
+  "orientation": "portrait",
+  "scope": "/admin/",
+  "icons": [
+    {
+      "src": "/IMG_8861.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/IMG_8861.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ]
+}
