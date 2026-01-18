@@ -10,10 +10,12 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" 
         integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" 
         crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <!-- Manifest -->
+  <!-- Manifest (path-safe for subdomain OR subfolder) -->
   <link rel="manifest" href="manifest.webmanifest">
-  <!-- Added favicon link -->
-  <link rel="icon" href="../favicon_circle.ico" type="image/x-icon">
+  <meta name="theme-color" content="#204ECF">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" href="icon-192.png" type="image/png">
   <link rel="stylesheet" href="styles.css">
 
   <style>
@@ -1017,18 +1019,8 @@
   <!-- Welcome Modal Script -->
   <script type="module" src="./welcome-modal.js"></script>
 
-  <!-- PWA Service Worker Registration -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js')
-        .then((reg) => {
-          console.log("✅ Service Worker registered with scope:", reg.scope);
-        })
-        .catch((err) => {
-          console.error("❌ Service Worker registration failed:", err);
-        });
-    }
-  </script>
+  <!-- PWA: SW registration + update prompt -->
+  <script src="update-popup.js"></script>
 
   <!-- Dashboard Interactions -->
   <script>

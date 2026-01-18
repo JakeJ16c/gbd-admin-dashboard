@@ -10,14 +10,16 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" 
         integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" 
         crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <!-- Manifest -->
-  <link rel="manifest" href="/admin/manifest.webmanifest">
+  <!-- Manifest (use relative paths so this works on a subdomain OR a subfolder) -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#204ECF">
+
   <!-- Minimum required for iOS PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="apple-touch-icon" href="/IMG_8861.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
-  <!-- Added favicon link -->
-  <link rel="icon" href="/favicon_circle.ico" type="image/x-icon">
+  <!-- Favicon -->
+  <link rel="icon" href="icon-192.png" type="image/png">
   <link rel="stylesheet" href="styles.css">
 
   <style>
@@ -272,18 +274,8 @@
   <!-- Admin Auth Script (handles login gating) -->
   <script type="module" src="admin-auth.js"></script>
 
-  <!-- PWA Service Worker Registration -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/admin/sw.js', { scope: '/admin/' })
-        .then((reg) => {
-          console.log("✅ Service Worker registered with scope:", reg.scope);
-        })
-        .catch((err) => {
-          console.error("❌ Service Worker registration failed:", err);
-        });
-    }
-  </script>
+  <!-- PWA: SW registration + update prompt (path-safe for subdomain or subfolder) -->
+  <script src="update-popup.js"></script>
 
   <!-- Dashboard Interactions -->
   <script>

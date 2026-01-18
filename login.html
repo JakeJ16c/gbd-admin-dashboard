@@ -8,10 +8,13 @@
   <!-- Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
-  <link rel="icon" href="../favicon_circle.ico" type="image/x-icon" />
 
-  <!-- Manifest for installability -->
+  <!-- Manifest (path-safe for subdomain OR subfolder) -->
   <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#204ECF">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" href="icon-192.png" type="image/png" />
 
   <!-- Styles -->
   <link rel="stylesheet" href="styles.css" />
@@ -167,12 +170,8 @@
     </div>
   </div>
 
-  <!-- Service Worker for PWA -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
-    }
-  </script>
+  <!-- PWA: SW registration + update prompt -->
+  <script src="update-popup.js"></script>
   
   <!-- Admin Auth Script -->
   <script type="module" src="admin-auth.js"></script>

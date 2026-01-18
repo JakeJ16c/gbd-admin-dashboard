@@ -27,6 +27,7 @@ const toUrl = (path) => new URL(path, self.registration.scope).toString();
 const PRECACHE_URLS = [
   './',
   './index.html',
+  './login.html',
   './styles.css',
   './admin-auth.js',
   './dashboard.js',
@@ -43,8 +44,9 @@ const PRECACHE_URLS = [
   './welcome-modal.js',
   './update-popup.js',
   './manifest.webmanifest',
-  '../IMG_8861.png',
-  '../favicon_circle.ico'
+  './icon-192.png',
+  './icon-512.png',
+  './apple-touch-icon.png'
 ].map(toUrl);
 
 const OFFLINE_FALLBACK = toUrl('./index.html');
@@ -148,8 +150,8 @@ messaging.onBackgroundMessage((payload) => {
 
   self.registration.showNotification(title, {
     body,
-    icon: '../IMG_8861.png',
-    badge: '../favicon_circle.ico',
+    icon: './icon-192.png',
+    badge: './icon-192.png',
     data: { url: urlToOpen }
   });
 });
