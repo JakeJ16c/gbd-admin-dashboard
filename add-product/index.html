@@ -16,6 +16,8 @@
 </head>
 
 <body>
+  <main class="content addp">
+    <div class="addp-panel">
 
       <!-- page header -->
       <section class="addp-header">
@@ -65,7 +67,6 @@
 
                 <div class="addp-field">
                   <label>Category <span>*</span></label>
-                  <!-- keep as text for now; later we can convert to select -->
                   <input id="category" type="text" placeholder="Select category">
                 </div>
               </div>
@@ -131,7 +132,7 @@
             </div>
           </div>
 
-          <!-- Shipping (optional, you can remove later) -->
+          <!-- Shipping -->
           <div class="addp-card">
             <div class="addp-card-head">
               <h2>Shipping</h2>
@@ -180,14 +181,12 @@
           </div>
         </div>
       </section>
-    </main>
-  </div>
 
-  <!-- keep these -->
+    </div>
+  </main>
+
   <script src="../update-popup.js"></script>
   <script type="module" src="../admin-auth.js"></script>
-
-  <!-- page -->
   <script type="module" src="./add-product.js"></script>
 </body>
 </html>
