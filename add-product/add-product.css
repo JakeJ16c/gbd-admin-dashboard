@@ -1,18 +1,11 @@
-/* Page background + spacing like the reference */
-/* STEP 1: Modal feel (centered white panel) */
 .addp{
   background:#F8F3EA;
   min-height:100vh;
-  padding: 28px 18px;
 }
 
 .addp-panel{
   max-width: 1200px;
   margin: 0 auto;
-  background:#fff;
-  border-radius: 22px;
-  border: 1px solid rgba(0,0,0,0.06);
-  box-shadow: 0 24px 60px rgba(0,0,0,0.14);
   padding: 18px;
 }
 
