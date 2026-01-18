@@ -5,109 +5,221 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Add Product • GBD Admin</title>
 
-  <!-- IMPORTANT: paths are relative to /add-product/ -->
+  <!-- global -->
   <link rel="stylesheet" href="../styles.css" />
+  <!-- page -->
+  <link rel="stylesheet" href="./add-product.css" />
+
   <link rel="manifest" href="../manifest.webmanifest">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
   <link rel="icon" href="../favicon_circle.ico" type="image/x-icon">
-
-  <style>
-    .page-wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
-    .page-title { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
-    .page-title h1 { margin:0; font-size:22px; font-weight:800; color:#204ECF; }
-    .sub { margin-top:4px; color:#666; font-size:13px; font-weight:600; }
-    .layout-grid { display:grid; grid-template-columns: 1.2fr 0.8fr; gap:18px; align-items:start; }
-    .card { background:#fff; border-radius:14px; padding:18px; box-shadow:0 10px 22px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.06); }
-    .card h2 { margin:0 0 12px 0; font-size:15px; font-weight:800; color:#111; }
-    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
-    .form-row.one { grid-template-columns:1fr; }
-    label { display:block; font-size:12px; font-weight:800; color:#333; margin-bottom:6px; }
-    input, textarea { width:100%; border:1px solid #ddd; border-radius:10px; padding:10px 12px; font-size:14px; outline:none; background:#fff; }
-    textarea { min-height:110px; resize:vertical; }
-    .hint { font-size:12px; color:#777; margin-top:6px; line-height:1.35; }
-    .actions { display:flex; gap:10px; justify-content:flex-end; }
-    .btn { border:none; border-radius:12px; padding:10px 14px; font-weight:900; cursor:pointer; font-size:14px; }
-    .btn.primary { background:#204ECF; color:#fff; }
-    .btn.ghost { background:rgba(32,78,207,0.08); color:#204ECF; }
-    @media (max-width: 900px){ .layout-grid{ grid-template-columns:1fr; } }
-  </style>
 </head>
 
 <body>
   <div class="main-container">
+    <!-- Keep your existing sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">Menu</div>
       <nav class="sidebar-nav">
-        <a href="../index.html">Dashboard</a>
-        <a href="../orders.html">Orders</a>
+        <a href="../index.html">Overview</a>
         <a href="../products.html" class="active">Products</a>
-        <a href="../site-design.html">Site Design</a>
+        <a href="../orders.html">Orders</a>
         <a href="../analytics.html">Analytics</a>
         <a href="../settings.html">Settings</a>
       </nav>
     </aside>
 
-    <main class="content">
-      <div class="page-wrap">
-        <div class="page-title">
-          <div>
-            <h1>Add Product</h1>
-            <div class="sub">New page layout (no modal).</div>
+    <main class="content addp">
+      <!-- top search / header area -->
+      <header class="addp-topbar">
+        <div class="addp-search">
+          <span class="addp-search-icon">🔍</span>
+          <input type="text" placeholder="Search products, orders, customers..." />
+        </div>
+
+        <div class="addp-topbar-right">
+          <button class="addp-icon-btn" type="button" aria-label="Notifications">🔔</button>
+          <div class="addp-user">
+            <div class="addp-avatar">AD</div>
+            <div class="addp-user-meta">
+              <div class="addp-user-name">Admin User</div>
+              <div class="addp-user-email">admin@goldenbydaisy.co.uk</div>
+            </div>
           </div>
-          <div class="actions">
-            <button class="btn ghost" id="cancelBtn">Cancel</button>
-            <button class="btn primary" id="saveBtn">Save Product</button>
+        </div>
+      </header>
+
+      <!-- page header -->
+      <section class="addp-header">
+        <a class="addp-back" href="../products.html">← Back to Products</a>
+        <h1>Add New Product</h1>
+        <p>Create a new product listing for your store</p>
+      </section>
+
+      <!-- main grid -->
+      <section class="addp-grid">
+        <!-- LEFT column -->
+        <div class="addp-col">
+          <!-- Product Images -->
+          <div class="addp-card">
+            <div class="addp-card-head">
+              <h2>Product Images</h2>
+              <p>Add up to 10 images. First image will be the main product image.</p>
+            </div>
+
+            <div class="addp-dropzone" id="dropzone">
+              <div class="addp-drop-icon">⬆️</div>
+              <div class="addp-drop-title">Click to upload or drag and drop</div>
+              <div class="addp-drop-sub">PNG, JPG, WEBP up to 10MB</div>
+              <input id="imageInput" type="file" accept="image/*" multiple hidden>
+            </div>
+
+            <div class="addp-thumbs" id="thumbs"></div>
+          </div>
+
+          <!-- Product Information -->
+          <div class="addp-card">
+            <div class="addp-card-head">
+              <h2>Product Information</h2>
+            </div>
+
+            <div class="addp-form">
+              <div class="addp-field">
+                <label>Product Name <span>*</span></label>
+                <input id="name" type="text" placeholder="e.g. Premium Wireless Headphones">
+              </div>
+
+              <div class="addp-row">
+                <div class="addp-field">
+                  <label>Price (£) <span>*</span></label>
+                  <input id="price" type="number" min="0" step="0.01" placeholder="0.00">
+                </div>
+
+                <div class="addp-field">
+                  <label>Category <span>*</span></label>
+                  <!-- keep as text for now; later we can convert to select -->
+                  <input id="category" type="text" placeholder="Select category">
+                </div>
+              </div>
+
+              <div class="addp-row">
+                <div class="addp-field">
+                  <label>SKU / Product Code</label>
+                  <input id="sku" type="text" placeholder="e.g. GBD-001">
+                </div>
+
+                <div class="addp-field">
+                  <label>Design</label>
+                  <input id="design" type="text" placeholder="e.g. Beach / Animals / Daisy">
+                </div>
+              </div>
+
+              <div class="addp-field">
+                <label>Description <span>*</span></label>
+                <textarea id="desc" placeholder="Describe your product in detail..."></textarea>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="layout-grid">
-          <section class="card">
-            <h2>Details</h2>
-
-            <div class="form-row">
-              <div>
-                <label for="name">Product Name</label>
-                <input id="name" type="text" placeholder="e.g. Beach Tote Bag" />
-              </div>
-              <div>
-                <label for="price">Price (£)</label>
-                <input id="price" type="number" step="0.01" min="0" placeholder="e.g. 25.00" />
-              </div>
+        <!-- RIGHT column -->
+        <div class="addp-col">
+          <!-- Inventory -->
+          <div class="addp-card">
+            <div class="addp-card-head">
+              <h2>Inventory</h2>
             </div>
 
-            <div class="form-row">
-              <div>
-                <label for="category">Category</label>
-                <input id="category" type="text" placeholder="e.g. Bags" />
-              </div>
-              <div>
-                <label for="design">Design</label>
-                <input id="design" type="text" placeholder="e.g. Beach" />
-              </div>
+            <div class="addp-radio-group" id="sizeMode">
+              <label class="addp-radio">
+                <input type="radio" name="sizes" value="one" checked>
+                <div>
+                  <div class="addp-radio-title">One Size</div>
+                  <div class="addp-radio-sub">Product has only one size</div>
+                </div>
+              </label>
+
+              <label class="addp-radio">
+                <input type="radio" name="sizes" value="multi">
+                <div>
+                  <div class="addp-radio-title">Multiple Sizes</div>
+                  <div class="addp-radio-sub">Product has different sizes</div>
+                </div>
+              </label>
             </div>
 
-            <div class="form-row one">
-              <div>
-                <label for="desc">Description</label>
-                <textarea id="desc" placeholder="Write a clear description..."></textarea>
+            <div class="addp-field" id="oneSizeStockWrap">
+              <label>Stock Quantity <span>*</span></label>
+              <input id="stockOne" type="number" min="0" placeholder="0">
+              <small>Number of units available</small>
+            </div>
+
+            <div class="addp-multi" id="multiSizeWrap" style="display:none;">
+              <div class="addp-field">
+                <label>Sizes + stock</label>
+                <div id="sizesList" class="addp-sizes"></div>
+                <button class="addp-mini-btn" id="addSizeBtn" type="button">+ Add Size</button>
               </div>
             </div>
-          </section>
+          </div>
 
-          <aside class="card">
-            <h2>Next step</h2>
-            <div class="hint">
-              This page is UI-only for now. Next we wire image upload + stock + Firestore save.
+          <!-- Shipping (optional, you can remove later) -->
+          <div class="addp-card">
+            <div class="addp-card-head">
+              <h2>Shipping</h2>
             </div>
-          </aside>
+
+            <div class="addp-field">
+              <label>Weight (kg)</label>
+              <input id="weight" type="number" min="0" step="0.01" placeholder="0.00">
+              <small>Used to calculate shipping costs</small>
+            </div>
+          </div>
+
+          <!-- Publish Status -->
+          <div class="addp-card">
+            <div class="addp-card-head">
+              <h2>Publish Status</h2>
+            </div>
+
+            <div class="addp-radio-group" id="publishMode">
+              <label class="addp-radio">
+                <input type="radio" name="publish" value="draft" checked>
+                <div>
+                  <div class="addp-radio-title">Save as Draft</div>
+                  <div class="addp-radio-sub">Product will not be visible on your website.</div>
+                </div>
+              </label>
+
+              <label class="addp-radio">
+                <input type="radio" name="publish" value="live">
+                <div>
+                  <div class="addp-radio-title">Publish Immediately</div>
+                  <div class="addp-radio-sub">Product will go live on your website right away.</div>
+                </div>
+              </label>
+            </div>
+
+            <div class="addp-tip">
+              You can publish this product from the Products page when you’re ready.
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="addp-actions">
+            <button class="addp-primary" id="saveBtn" type="button">Save Product</button>
+            <button class="addp-secondary" id="cancelBtn" type="button">Cancel</button>
+          </div>
         </div>
-      </div>
+      </section>
     </main>
   </div>
 
-  <!-- IMPORTANT: these are relative because we are in /add-product/ -->
+  <!-- keep these -->
   <script src="../update-popup.js"></script>
   <script type="module" src="../admin-auth.js"></script>
+
+  <!-- page -->
   <script type="module" src="./add-product.js"></script>
 </body>
 </html>
