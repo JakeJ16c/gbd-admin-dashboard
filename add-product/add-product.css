@@ -42,7 +42,7 @@
   border:none;
   outline:none;
   width:100%;
-  font-weight:700;
+  font-weight:500;
   background:transparent;
 }
 
@@ -80,12 +80,12 @@
   display:flex;
   align-items:center;
   justify-content:center;
-  font-weight:900;
+  font-weight:500;
   font-size: 12px;
 }
 
-.addp-user-name{ font-weight:900; font-size: 12px; }
-.addp-user-email{ font-weight:700; font-size: 11px; color:#666; }
+.addp-user-name{ font-weight:500; font-size: 12px; }
+.addp-user-email{ font-weight:500; font-size: 11px; color:#666; }
 
 /* Page header */
 .addp-header{
@@ -104,14 +104,14 @@
 .addp-header h1{
   margin: 0;
   font-size: 26px;
-  font-weight: 950;
+  font-weight: 500;
   color:#111;
 }
 
 .addp-header p{
   margin: 6px 0 0;
   color:#666;
-  font-weight: 700;
+  font-weight: 500;
   font-size: 13px;
 }
 
@@ -141,7 +141,7 @@
 .addp-card-head h2{
   margin: 0;
   font-size: 14px;
-  font-weight: 950;
+  font-weight: 500;
   color:#111;
 }
 
@@ -149,7 +149,7 @@
   margin: 6px 0 0;
   font-size: 12px;
   color:#666;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 /* Form */
@@ -167,7 +167,7 @@
 .addp-field label{
   display:block;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 500;
   color:#222;
   margin-bottom: 6px;
 }
@@ -180,7 +180,7 @@
   border:1px solid rgba(0,0,0,0.14);
   border-radius: 12px;
   padding: 10px 12px;
-  font-weight: 750;
+  font-weight: 500;
   outline:none;
   background:#fff;
 }
@@ -194,7 +194,7 @@
   display:block;
   margin-top: 6px;
   color:#777;
-  font-weight: 700;
+  font-weight: 500;
   font-size: 11px;
 }
 
@@ -211,13 +211,13 @@
 
 .addp-drop-title{
   margin-top: 10px;
-  font-weight: 950;
+  font-weight: 500;
   color:#204ECF;
 }
 
 .addp-drop-sub{
   margin-top: 6px;
-  font-weight: 750;
+  font-weight: 500;
   color:#666;
   font-size: 12px;
 }
@@ -252,13 +252,13 @@
 }
 
 .addp-radio-title{
-  font-weight: 950;
+  font-weight: 500;
   font-size: 13px;
 }
 
 .addp-radio-sub{
   margin-top: 4px;
-  font-weight: 700;
+  font-weight: 500;
   color:#666;
   font-size: 12px;
 }
@@ -266,7 +266,7 @@
 .addp-tip{
   margin-top: 12px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 500;
   color:#204ECF;
   background: rgba(32,78,207,0.08);
   border: 1px solid rgba(32,78,207,0.18);
@@ -292,7 +292,7 @@
   border:none;
   background: rgba(32,78,207,0.10);
   color:#204ECF;
-  font-weight: 950;
+  font-weight: 500;
   border-radius: 12px;
   padding: 10px 12px;
   cursor:pointer;
@@ -312,7 +312,7 @@
   padding: 12px 14px;
   background: #111;
   color:#fff;
-  font-weight: 950;
+  font-weight: 500;
   cursor:pointer;
 }
 
@@ -322,7 +322,7 @@
   padding: 12px 14px;
   background: #fff;
   color:#111;
-  font-weight: 950;
+  font-weight: 500;
   cursor:pointer;
 }
 
