@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Product • GBD Admin</title>
+
+  <!-- IMPORTANT: paths are relative to /add-product/ -->
+  <link rel="stylesheet" href="../styles.css" />
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="icon" href="../favicon_circle.ico" type="image/x-icon">
+
+  <style>
+    .page-wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
+    .page-title { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+    .page-title h1 { margin:0; font-size:22px; font-weight:800; color:#204ECF; }
+    .sub { margin-top:4px; color:#666; font-size:13px; font-weight:600; }
+    .layout-grid { display:grid; grid-template-columns: 1.2fr 0.8fr; gap:18px; align-items:start; }
+    .card { background:#fff; border-radius:14px; padding:18px; box-shadow:0 10px 22px rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.06); }
+    .card h2 { margin:0 0 12px 0; font-size:15px; font-weight:800; color:#111; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+    .form-row.one { grid-template-columns:1fr; }
+    label { display:block; font-size:12px; font-weight:800; color:#333; margin-bottom:6px; }
+    input, textarea { width:100%; border:1px solid #ddd; border-radius:10px; padding:10px 12px; font-size:14px; outline:none; background:#fff; }
+    textarea { min-height:110px; resize:vertical; }
+    .hint { font-size:12px; color:#777; margin-top:6px; line-height:1.35; }
+    .actions { display:flex; gap:10px; justify-content:flex-end; }
+    .btn { border:none; border-radius:12px; padding:10px 14px; font-weight:900; cursor:pointer; font-size:14px; }
+    .btn.primary { background:#204ECF; color:#fff; }
+    .btn.ghost { background:rgba(32,78,207,0.08); color:#204ECF; }
+    @media (max-width: 900px){ .layout-grid{ grid-template-columns:1fr; } }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">Menu</div>
+      <nav class="sidebar-nav">
+        <a href="../index.html">Dashboard</a>
+        <a href="../orders.html">Orders</a>
+        <a href="../products.html" class="active">Products</a>
+        <a href="../site-design.html">Site Design</a>
+        <a href="../analytics.html">Analytics</a>
+        <a href="../settings.html">Settings</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <div class="page-wrap">
+        <div class="page-title">
+          <div>
+            <h1>Add Product</h1>
+            <div class="sub">New page layout (no modal).</div>
+          </div>
+          <div class="actions">
+            <button class="btn ghost" id="cancelBtn">Cancel</button>
+            <button class="btn primary" id="saveBtn">Save Product</button>
+          </div>
+        </div>
+
+        <div class="layout-grid">
+          <section class="card">
+            <h2>Details</h2>
+
+            <div class="form-row">
+              <div>
+                <label for="name">Product Name</label>
+                <input id="name" type="text" placeholder="e.g. Beach Tote Bag" />
+              </div>
+              <div>
+                <label for="price">Price (£)</label>
+                <input id="price" type="number" step="0.01" min="0" placeholder="e.g. 25.00" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div>
+                <label for="category">Category</label>
+                <input id="category" type="text" placeholder="e.g. Bags" />
+              </div>
+              <div>
+                <label for="design">Design</label>
+                <input id="design" type="text" placeholder="e.g. Beach" />
+              </div>
+            </div>
+
+            <div class="form-row one">
+              <div>
+                <label for="desc">Description</label>
+                <textarea id="desc" placeholder="Write a clear description..."></textarea>
+              </div>
+            </div>
+          </section>
+
+          <aside class="card">
+            <h2>Next step</h2>
+            <div class="hint">
+              This page is UI-only for now. Next we wire image upload + stock + Firestore save.
+            </div>
+          </aside>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- IMPORTANT: these are relative because we are in /add-product/ -->
+  <script src="../update-popup.js"></script>
+  <script type="module" src="../admin-auth.js"></script>
+  <script type="module" src="./add-product.js"></script>
+</body>
+</html>
