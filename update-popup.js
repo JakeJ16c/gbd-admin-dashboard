@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let newWorker = null;
 
   // ✅ Register your main service worker
-  navigator.serviceWorker.register('./sw.js').then((reg) => {
+  navigator.serviceWorker.register('/sw.js').then((reg) => {
     // 🟡 Triggered when a new service worker is found
     reg.addEventListener('updatefound', () => {
       newWorker = reg.installing;
