@@ -1,10 +1,12 @@
-// admin/sw.js (GBD Admin Dashboard)
-// Stable PWA cache + working update flow + FCM background notifications
+// sw.js (GBD Admin Dashboard)
+// - Reliable install (best-effort precache: one missing file won't brick the SW)
+// - Network-first for HTML (avoids getting stuck on stale pages)
+// - Stale-while-revalidate for static assets
+// - FCM background notifications
 
 importScripts('https://www.gstatic.com/firebasejs/11.8.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/11.8.1/firebase-messaging-compat.js');
 
-// 🔥 Firebase config (public config is normal in web apps)
 firebase.initializeApp({
   apiKey: "AIzaSyA6kN9-7dN9Ovq6BmWBBJwBhLXRW6INX4c",
   authDomain: "daisy-s-website.firebaseapp.com",
@@ -16,16 +18,14 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// ✅ Bump this when you want to force a fresh cache
-const CACHE_VERSION = 'v2';
+// Bump this to force refresh
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = `admin-cache-${CACHE_VERSION}`;
 
 const toUrl = (path) => new URL(path, self.registration.scope).toString();
 
-// Core “app shell” files to precache
-// IMPORTANT: only include files that definitely exist (no product-detail.js)
+// Only include files that exist in the admin deployment
 const PRECACHE_URLS = [
-  './',
   './index.html',
   './login.html',
   './styles.css',
@@ -54,8 +54,19 @@ const OFFLINE_FALLBACK = toUrl('./index.html');
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    // cache: 'reload' helps avoid the browser giving you a stale HTTP cache copy
-    await cache.addAll(PRECACHE_URLS.map(u => new Request(u, { cache: 'reload' })));
+
+    // Best-effort precache: do NOT fail the whole install if one file 404s
+    await Promise.all(
+      PRECACHE_URLS.map(async (url) => {
+        try {
+          const res = await fetch(new Request(url, { cache: 'reload' }));
+          if (res && res.ok) await cache.put(url, res.clone());
+        } catch {
+          // ignore individual failures
+        }
+      })
+    );
+
     await self.skipWaiting();
   })());
 });
@@ -68,11 +79,12 @@ self.addEventListener('activate', (event) => {
         .filter(k => k.startsWith('admin-cache-') && k !== CACHE_NAME)
         .map(k => caches.delete(k))
     );
+
     await self.clients.claim();
   })());
 });
 
-// ✅ Allows update-popup.js to activate the waiting SW immediately
+// Enables update-popup.js to activate a waiting SW
 self.addEventListener('message', (event) => {
   if (event.data && event.data.action === 'skipWaiting') {
     self.skipWaiting();
@@ -89,37 +101,30 @@ function isFirebaseOrApi(url) {
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
-
-  // Only handle GET
   if (req.method !== 'GET') return;
 
   const url = req.url;
-
-  // Only same-origin (keeps SW simple + avoids caching CDNs)
   if (!url.startsWith(self.location.origin)) return;
-
-  // Don't cache firebase/api calls
   if (isFirebaseOrApi(url)) return;
 
-  const isNavigation = req.mode === 'navigate' || (req.destination === 'document');
+  const isNavigation = req.mode === 'navigate' || req.destination === 'document';
 
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
 
-    // ✅ Network-first for HTML (prevents stale page lock-in)
+    // Network-first for HTML
     if (isNavigation) {
       try {
         const fresh = await fetch(req);
-        // Cache latest HTML for offline fallback
         if (fresh && fresh.ok) cache.put(req, fresh.clone());
         return fresh;
       } catch {
         const cached = await cache.match(req);
-        return cached || cache.match(OFFLINE_FALLBACK);
+        return cached || (await cache.match(OFFLINE_FALLBACK));
       }
     }
 
-    // ✅ Stale-while-revalidate for static assets (fast + updates silently)
+    // Stale-while-revalidate for static assets
     const cached = await cache.match(req);
     const fetchPromise = fetch(req)
       .then(res => {
@@ -132,21 +137,11 @@ self.addEventListener('fetch', (event) => {
   })());
 });
 
-// ✅ FCM background messages (reliable, no broken "push" handler)
+// FCM background notifications
 messaging.onBackgroundMessage((payload) => {
-  const title =
-    payload?.notification?.title ||
-    payload?.data?.title ||
-    "You're So Golden";
-
-  const body =
-    payload?.notification?.body ||
-    payload?.data?.body ||
-    "You have a new notification";
-
-  const urlToOpen =
-    payload?.data?.url ||
-    './index.html';
+  const title = payload?.notification?.title || payload?.data?.title || 'You\'re So Golden';
+  const body = payload?.notification?.body || payload?.data?.body || 'You have a new notification';
+  const urlToOpen = payload?.data?.url || './index.html';
 
   self.registration.showNotification(title, {
     body,

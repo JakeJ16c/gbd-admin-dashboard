@@ -10,15 +10,13 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" 
         integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" 
         crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <!-- Manifest (use relative paths so this works on a subdomain OR a subfolder) -->
+  <!-- Manifest -->
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#204ECF">
-
   <!-- Minimum required for iOS PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
-  <!-- Favicon -->
+  <!-- Added favicon link -->
   <link rel="icon" href="icon-192.png" type="image/png">
   <link rel="stylesheet" href="styles.css">
 
@@ -272,12 +270,7 @@
   </main>
 
   <!-- Admin Auth Script (handles login gating) -->
-  <script type="module" src="admin-auth.js"></script>
-
-  <!-- PWA: SW registration + update prompt (path-safe for subdomain or subfolder) -->
-  <script src="update-popup.js"></script>
-
-  <!-- Dashboard Interactions -->
+  <script type="module" src="admin-auth.js"></script><!-- Dashboard Interactions -->
   <script>
     const menuToggle = document.getElementById('menu-toggle');
     const sidebar = document.getElementById('sidebar');
@@ -621,6 +614,9 @@ onSnapshot(collection(db, "waitinglist"), (snapshot) => {
 
 loadWaitingList();
 </script>
+
+
+  <script src="update-popup.js"></script>
 
 </body>
 </html>

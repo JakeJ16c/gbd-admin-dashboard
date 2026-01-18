@@ -1,110 +1,93 @@
-// update-popup.js
-// Registers the service worker and shows a small in-app prompt when a new version is ready.
-// Works whether the admin is hosted at a subdomain root (admin.domain.com/) or a subfolder.
+// Registers the service worker and shows an update banner when a new version is ready.
+// Safe to include on every page.
 
-(function () {
+(async () => {
   if (!('serviceWorker' in navigator)) return;
 
-  let refreshing = false;
+  try {
+    const reg = await navigator.serviceWorker.register('./sw.js');
 
-  function showUpdatePrompt(reg) {
-    // Avoid duplicates
-    if (document.getElementById('pwaUpdateBar')) return;
+    // If there's already a waiting worker, show the banner immediately
+    if (reg.waiting) showUpdateBanner(reg);
 
-    const bar = document.createElement('div');
-    bar.id = 'pwaUpdateBar';
-    bar.style.cssText = [
-      'position:fixed',
-      'left:50%',
-      'bottom:16px',
-      'transform:translateX(-50%)',
-      'background:#111827',
-      'color:#fff',
-      'padding:10px 12px',
-      'border-radius:999px',
-      'display:flex',
-      'align-items:center',
-      'gap:10px',
-      'box-shadow:0 10px 30px rgba(0,0,0,0.25)',
-      'z-index:99999',
-      'font:500 14px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial'
-    ].join(';');
+    // Listen for new SW installing
+    reg.addEventListener('updatefound', () => {
+      const newWorker = reg.installing;
+      if (!newWorker) return;
 
-    const text = document.createElement('span');
-    text.textContent = 'Update available';
-
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = 'Refresh';
-    btn.style.cssText = [
-      'border:none',
-      'background:#204ECF',
-      'color:#fff',
-      'padding:8px 12px',
-      'border-radius:999px',
-      'cursor:pointer',
-      'font-weight:700'
-    ].join(';');
-
-    const dismiss = document.createElement('button');
-    dismiss.type = 'button';
-    dismiss.textContent = '✕';
-    dismiss.setAttribute('aria-label', 'Dismiss');
-    dismiss.style.cssText = [
-      'border:none',
-      'background:transparent',
-      'color:#fff',
-      'cursor:pointer',
-      'font-size:16px',
-      'line-height:1',
-      'padding:4px 6px'
-    ].join(';');
-
-    btn.addEventListener('click', () => {
-      // Tell the waiting SW to activate now
-      if (reg.waiting) {
-        reg.waiting.postMessage({ action: 'skipWaiting' });
-      }
+      newWorker.addEventListener('statechange', () => {
+        // Installed means: new SW ready. If there's an existing controller, it's an update.
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          showUpdateBanner(reg);
+        }
+      });
     });
 
-    dismiss.addEventListener('click', () => {
-      bar.remove();
+    // Refresh once after the new SW takes control
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
     });
 
-    bar.appendChild(text);
-    bar.appendChild(btn);
-    bar.appendChild(dismiss);
-    document.body.appendChild(bar);
+  } catch (err) {
+    console.warn('Service Worker registration failed:', err);
   }
 
-  window.addEventListener('load', async () => {
-    try {
-      const reg = await navigator.serviceWorker.register('./sw.js');
+  function showUpdateBanner(reg) {
+    // Avoid duplicates
+    if (document.getElementById('sw-update-banner')) return;
 
-      // If there's already a waiting worker (e.g., user opened a 2nd tab)
-      if (reg.waiting) showUpdatePrompt(reg);
+    const banner = document.createElement('div');
+    banner.id = 'sw-update-banner';
+    banner.style.cssText = [
+      'position:fixed',
+      'left:16px',
+      'right:16px',
+      'bottom:16px',
+      'z-index:99999',
+      'background:#204ECF',
+      'color:#fff',
+      'padding:12px 14px',
+      'border-radius:12px',
+      'box-shadow:0 10px 30px rgba(0,0,0,0.18)',
+      'display:flex',
+      'align-items:center',
+      'justify-content:space-between',
+      'gap:12px',
+      'font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif',
+      'font-size:14px'
+    ].join(';');
 
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        if (!newWorker) return;
+    const text = document.createElement('div');
+    text.textContent = 'Update available. Refresh to get the latest version.';
 
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed') {
-            // When there's an existing controller, an update is ready
-            if (navigator.serviceWorker.controller) {
-              showUpdatePrompt(reg);
-            }
-          }
-        });
-      });
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex; gap:8px; align-items:center;';
 
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (refreshing) return;
-        refreshing = true;
-        window.location.reload();
-      });
-    } catch (err) {
-      console.warn('Service worker registration failed:', err);
-    }
-  });
+    const refreshBtn = document.createElement('button');
+    refreshBtn.textContent = 'Update';
+    refreshBtn.style.cssText = 'background:#fff; color:#204ECF; border:none; padding:8px 12px; border-radius:10px; font-weight:700; cursor:pointer;';
+
+    const dismissBtn = document.createElement('button');
+    dismissBtn.textContent = 'Later';
+    dismissBtn.style.cssText = 'background:transparent; color:#fff; border:1px solid rgba(255,255,255,0.6); padding:8px 12px; border-radius:10px; font-weight:600; cursor:pointer;';
+
+    refreshBtn.addEventListener('click', () => {
+      if (!reg.waiting) return window.location.reload();
+      // Tell the waiting SW to activate
+      reg.waiting.postMessage({ action: 'skipWaiting' });
+    });
+
+    dismissBtn.addEventListener('click', () => banner.remove());
+
+    actions.appendChild(dismissBtn);
+    actions.appendChild(refreshBtn);
+
+    banner.appendChild(text);
+    banner.appendChild(actions);
+
+    document.body.appendChild(banner);
+  }
 })();
