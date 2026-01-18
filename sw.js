@@ -1,11 +1,10 @@
-// Updated admin/sw.js with proper scope handling
-// This service worker is specifically for the admin dashboard
+// admin/sw.js (GBD Admin Dashboard)
+// Stable PWA cache + working update flow + FCM background notifications
 
-
-// Firebase background push support for FCM
 importScripts('https://www.gstatic.com/firebasejs/11.8.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/11.8.1/firebase-messaging-compat.js');
 
+// 🔥 Firebase config (public config is normal in web apps)
 firebase.initializeApp({
   apiKey: "AIzaSyA6kN9-7dN9Ovq6BmWBBJwBhLXRW6INX4c",
   authDomain: "daisy-s-website.firebaseapp.com",
@@ -17,20 +16,22 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// ✅ Bump this when you want to force a fresh cache
+const CACHE_VERSION = 'v2';
+const CACHE_NAME = `admin-cache-${CACHE_VERSION}`;
 
-const CACHE_NAME = 'admin-cache-v1';
-const OFFLINE_URL = 'index.html';
+const toUrl = (path) => new URL(path, self.registration.scope).toString();
 
-// Assets to cache
-const ASSETS_TO_CACHE = [
+// Core “app shell” files to precache
+// IMPORTANT: only include files that definitely exist (no product-detail.js)
+const PRECACHE_URLS = [
   './',
   './index.html',
   './styles.css',
   './admin-auth.js',
-  './notifications.js',
   './dashboard.js',
+  './notifications.js',
   './products.html',
-  './product-detail.js',
   './products.js',
   './orders.html',
   './orders.js',
@@ -39,164 +40,133 @@ const ASSETS_TO_CACHE = [
   './analytics.js',
   './site-design.html',
   './marquee-manager.js',
+  './welcome-modal.js',
   './update-popup.js',
   './manifest.webmanifest',
   '../IMG_8861.png',
   '../favicon_circle.ico'
-];
+].map(toUrl);
 
-// Install event - cache assets
-self.addEventListener('install', event => {
-  console.log('✅ [Admin SW] Installing Service Worker...');
-  
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('✅ [Admin SW] Caching app assets');
-        return cache.addAll(ASSETS_TO_CACHE);
-      })
-      .then(() => {
-        console.log('✅ [Admin SW] Service Worker installed');
-        return self.skipWaiting();
-      })
-      .catch(error => {
-        console.error('❌ [Admin SW] Error during install:', error);
-      })
-  );
+const OFFLINE_FALLBACK = toUrl('./index.html');
+
+self.addEventListener('install', (event) => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    // cache: 'reload' helps avoid the browser giving you a stale HTTP cache copy
+    await cache.addAll(PRECACHE_URLS.map(u => new Request(u, { cache: 'reload' })));
+    await self.skipWaiting();
+  })());
 });
 
-// Activate event - clean up old caches
-self.addEventListener('activate', event => {
-  console.log('✅ [Admin SW] Activating Service Worker...');
-  
-  event.waitUntil(
-    caches.keys()
-      .then(cacheNames => {
-        return Promise.all(
-          cacheNames.filter(cacheName => {
-            return cacheName !== CACHE_NAME;
-          }).map(cacheName => {
-            console.log('✅ [Admin SW] Removing old cache:', cacheName);
-            return caches.delete(cacheName);
-          })
-        );
-      })
-      .then(() => {
-        console.log('✅ [Admin SW] Service Worker activated');
-        return self.clients.claim();
-      })
-  );
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter(k => k.startsWith('admin-cache-') && k !== CACHE_NAME)
+        .map(k => caches.delete(k))
+    );
+    await self.clients.claim();
+  })());
 });
 
-// Fetch event - serve from cache or network
-self.addEventListener('fetch', event => {
-  // Skip cross-origin requests
-  if (!event.request.url.startsWith(self.location.origin)) {
-    return;
+// ✅ Allows update-popup.js to activate the waiting SW immediately
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.action === 'skipWaiting') {
+    self.skipWaiting();
   }
-  
-  // Handle API requests differently (don't cache)
-  if (event.request.url.includes('/api/') || 
-      event.request.url.includes('firestore.googleapis.com') ||
-      event.request.url.includes('firebase')) {
-    return;
-  }
-  
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
-          // Return cached response
-          return response;
-        }
-        
-        // Fetch from network
-        return fetch(event.request)
-          .then(networkResponse => {
-            // Cache the response for future
-            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-              const responseToCache = networkResponse.clone();
-              caches.open(CACHE_NAME)
-                .then(cache => {
-                  cache.put(event.request, responseToCache);
-                });
-            }
-            
-            return networkResponse;
-          })
-          .catch(error => {
-            console.error('❌ [Admin SW] Fetch error:', error);
-            
-            // For navigation requests, serve the offline page
-            if (event.request.mode === 'navigate') {
-              return caches.match(OFFLINE_URL);
-            }
-            
-            return null;
-          });
-      })
-  );
 });
 
-// Push event - handle push notifications
-self.addEventListener('push', event => {
-  console.log('✅ [Admin SW] Push notification received:', event);
-  
-  let notificationData = {};
-  
-  if (event.data) {
-    try {
-      notificationData = event.data.json();
-    } catch (e) {
-      notificationData = {
-        title: 'New Notification',
-        body: event.data.text()
-      };
+function isFirebaseOrApi(url) {
+  return (
+    url.includes('firestore.googleapis.com') ||
+    url.includes('firebase') ||
+    url.includes('/api/')
+  );
+}
+
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+
+  // Only handle GET
+  if (req.method !== 'GET') return;
+
+  const url = req.url;
+
+  // Only same-origin (keeps SW simple + avoids caching CDNs)
+  if (!url.startsWith(self.location.origin)) return;
+
+  // Don't cache firebase/api calls
+  if (isFirebaseOrApi(url)) return;
+
+  const isNavigation = req.mode === 'navigate' || (req.destination === 'document');
+
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+
+    // ✅ Network-first for HTML (prevents stale page lock-in)
+    if (isNavigation) {
+      try {
+        const fresh = await fetch(req);
+        // Cache latest HTML for offline fallback
+        if (fresh && fresh.ok) cache.put(req, fresh.clone());
+        return fresh;
+      } catch {
+        const cached = await cache.match(req);
+        return cached || cache.match(OFFLINE_FALLBACK);
+      }
     }
-  }
-  
-  //const title = notificationData.title || 'You\'re So Golden';
-  //const options = {
-    //body: notificationData.body || 'You have a new notification',
-    //icon: '../icon-512.png',
-    //badge: '../favicon_circle.ico',
-    //data: notificationData.data || {},
-    //actions: notificationData.actions || []
-  //};
-  
-  event.waitUntil(
-    self.registration.showNotification(title, options)
-  );
-});
 
-// Notification click event
-self.addEventListener('notificationclick', event => {
-  console.log('✅ [Admin SW] Notification clicked:', event);
-  
-  event.notification.close();
-  
-  // Handle notification click - open appropriate page
-  const urlToOpen = event.notification.data && event.notification.data.url 
-    ? event.notification.data.url 
-    : './index.html';
-  
-  event.waitUntil(
-    clients.matchAll({type: 'window'})
-      .then(windowClients => {
-        // Check if there is already a window open
-        for (let client of windowClients) {
-          if (client.url === urlToOpen && 'focus' in client) {
-            return client.focus();
-          }
-        }
-        
-        // If no window is open, open a new one
-        if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
-        }
+    // ✅ Stale-while-revalidate for static assets (fast + updates silently)
+    const cached = await cache.match(req);
+    const fetchPromise = fetch(req)
+      .then(res => {
+        if (res && res.ok) cache.put(req, res.clone());
+        return res;
       })
-  );
+      .catch(() => null);
+
+    return cached || fetchPromise || new Response('', { status: 504, statusText: 'Offline' });
+  })());
 });
 
-// Log scope information for debugging
-console.log('✅ [Admin SW] Service Worker scope:', self.registration.scope);
+// ✅ FCM background messages (reliable, no broken "push" handler)
+messaging.onBackgroundMessage((payload) => {
+  const title =
+    payload?.notification?.title ||
+    payload?.data?.title ||
+    "You're So Golden";
+
+  const body =
+    payload?.notification?.body ||
+    payload?.data?.body ||
+    "You have a new notification";
+
+  const urlToOpen =
+    payload?.data?.url ||
+    './index.html';
+
+  self.registration.showNotification(title, {
+    body,
+    icon: '../IMG_8861.png',
+    badge: '../favicon_circle.ico',
+    data: { url: urlToOpen }
+  });
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const target = event.notification?.data?.url || './index.html';
+  const absoluteTarget = new URL(target, self.registration.scope).toString();
+
+  event.waitUntil((async () => {
+    const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+
+    for (const client of allClients) {
+      if (client.url === absoluteTarget && 'focus' in client) return client.focus();
+    }
+
+    if (clients.openWindow) return clients.openWindow(absoluteTarget);
+  })());
+});
