@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "daisy-s-website"
+  },
+  "targets": {
+    "daisy-s-website": {
+      "hosting": {
+        "admin": [
+          "gbd-admin"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
