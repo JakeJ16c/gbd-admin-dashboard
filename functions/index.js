@@ -1,32 +1,38 @@
+const admin = require("firebase-admin");
+admin.initializeApp();
+
+const { onRequest } = require("firebase-functions/v2/https");
+const { defineSecret } = require("firebase-functions/params");
+
+const ADMIN_BOOTSTRAP_SECRET = defineSecret("ADMIN_BOOTSTRAP_SECRET");
+
 /**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
+ * POST JSON:
+ * {
+ *   "secret": "...",
+ *   "email": "someone@example.com",
+ *   "admin": true
+ * }
  */
+exports.bootstrapSetAdmin = onRequest(
+  { secrets: [ADMIN_BOOTSTRAP_SECRET], cors: true },
+  async (req, res) => {
+    try {
+      if (req.method !== "POST") return res.status(405).send("Use POST");
 
-const {setGlobalOptions} = require("firebase-functions");
-const {onRequest} = require("firebase-functions/https");
-const logger = require("firebase-functions/logger");
+      const { secret, email, admin: makeAdmin } = req.body || {};
+      if (!secret || secret !== ADMIN_BOOTSTRAP_SECRET.value()) {
+        return res.status(403).send("Forbidden");
+      }
+      if (!email) return res.status(400).send("Missing email");
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+      const user = await admin.auth().getUserByEmail(String(email).trim());
+      await admin.auth().setCustomUserClaims(user.uid, { admin: !!makeAdmin });
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
-
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+      return res.json({ ok: true, uid: user.uid, admin: !!makeAdmin });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).send("Server error");
+    }
+  }
+);
