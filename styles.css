@@ -37,22 +37,6 @@
       text-shadow: 1px 1px 0 #fff;
       margin: 0;
     }
-    .menu-toggle {
-      background: none;
-      border: none;
-      font-size: 1.1rem;
-      color: var(--electric-blue);
-      cursor: pointer;
-      padding: 0.5rem 0.75rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-weight: 500;
-    }
-    
-    .menu-toggle:hover {
-      background-color: #d2e2ff;
-    }
     
     .menu-toggle i {
       font-size: 1rem;
@@ -60,13 +44,10 @@
     .sidebar {
       position: fixed;
       top: 0;
-      left: -240px;
       height: 100%;
-      width: 220px;
       background-color: var(--electric-blue);
       color: white;
       padding: 2rem 1rem;
-      transition: left 0.4s ease;
       z-index: 1000;
     }
     .sidebar.show {
