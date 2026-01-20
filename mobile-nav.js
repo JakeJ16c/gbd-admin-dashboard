@@ -1,39 +1,31 @@
-// mobile-nav.js (Admin)
-// Injects a clean mobile bottom bar + "More" sheet.
-// Include this script on admin pages (not login.html).
+// mobile-nav.js (Admin) — works from root + subfolders
 
-import { auth } from "../firebase.js";
+import { auth } from "./firebase.js";
 import { signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-
-const currentFile = (() => {
-  const p = window.location.pathname;
-  const file = p.substring(p.lastIndexOf("/") + 1);
-  return file || "index.html";
-})();
 
 const bottomNavHTML = `
   <nav class="bottom-nav" aria-label="Admin navigation">
-    <a href="index.html" data-key="home">
+    <a href="/index.html" data-key="home">
       <i class="fa-solid fa-house"></i>
       <span>Home</span>
     </a>
 
-    <a href="products.html" data-key="products">
+    <a href="/product-management/" data-key="products">
       <i class="fa-solid fa-store"></i>
       <span>Products</span>
     </a>
 
-    <a href="orders.html" data-key="orders">
+    <a href="/orders.html" data-key="orders">
       <i class="fa-solid fa-box"></i>
       <span>Orders</span>
     </a>
 
-    <a href="site-design.html" data-key="design">
+    <a href="/site-design.html" data-key="design">
       <i class="fa-solid fa-paint-brush"></i>
       <span>Design</span>
     </a>
 
-    <button type="button" data-action="open-more">
+    <button type="button" data-key="more" data-action="open-more">
       <i class="fa-solid fa-ellipsis"></i>
       <span>More</span>
     </button>
@@ -44,22 +36,22 @@ const bottomNavHTML = `
     <div class="more-sheet__panel" role="dialog" aria-label="More options">
       <div class="more-sheet__handle"></div>
 
-      <a class="more-sheet__link" href="settings.html">
+      <a class="more-sheet__link" href="/settings.html">
         <i class="fa-solid fa-cog"></i>
         <span>Settings</span>
       </a>
 
-      <a class="more-sheet__link" href="analytics.html">
+      <a class="more-sheet__link" href="/analytics.html">
         <i class="fa-solid fa-chart-line"></i>
         <span>Analytics</span>
       </a>
 
-      <a class="more-sheet__link" href="reviews.html">
+      <a class="more-sheet__link" href="/reviews.html">
         <i class="fa-solid fa-star"></i>
         <span>Reviews</span>
       </a>
 
-      <a class="more-sheet__link" href="index.html#admin-promo">
+      <a class="more-sheet__link" href="/index.html#admin-promo">
         <i class="fa-solid fa-tag"></i>
         <span>Promo Codes</span>
       </a>
@@ -72,28 +64,34 @@ const bottomNavHTML = `
   </div>
 `;
 
+function getActiveKey() {
+  const p = window.location.pathname;
+
+  if (p === "/" || p.endsWith("/index.html")) return "home";
+  if (p.startsWith("/product-management")) return "products";
+  if (p.endsWith("/orders.html")) return "orders";
+  if (p.endsWith("/site-design.html")) return "design";
+
+  if (
+    p.endsWith("/settings.html") ||
+    p.endsWith("/analytics.html") ||
+    p.endsWith("/reviews.html")
+  ) {
+    return "more";
+  }
+
+  return "home";
+}
+
 function setActiveBottomNav() {
-  const map = {
-    "index.html": "home",
-    "products.html": "products",
-    "orders.html": "orders",
-    "site-design.html": "design",
-  };
-
-  // Pages that should show as "More" active
-  const morePages = new Set(["settings.html", "analytics.html", "reviews.html"]);
-
-  const activeKey = map[currentFile] || (morePages.has(currentFile) ? "more" : "home");
-
+  const activeKey = getActiveKey();
   const nav = document.querySelector(".bottom-nav");
   if (!nav) return;
 
-  nav.querySelectorAll("a").forEach(a => a.classList.remove("active"));
+  nav.querySelectorAll("a,button").forEach(el => el.classList.remove("active"));
 
-  if (activeKey === "more") return; // keep clean; More is a button
-
-  const activeLink = nav.querySelector(`a[data-key="${activeKey}"]`);
-  if (activeLink) activeLink.classList.add("active");
+  const activeEl = nav.querySelector(`[data-key="${activeKey}"]`);
+  if (activeEl) activeEl.classList.add("active");
 }
 
 function openMore() {
@@ -113,23 +111,17 @@ function closeMore() {
 }
 
 async function doLogout() {
-  try {
-    await signOut(auth);
-  } catch (e) {
-    // ignore
-  }
-  window.location.href = "login.html";
+  try { await signOut(auth); } catch (e) {}
+  window.location.href = "/login.html";
 }
 
 function init() {
-  // Inject once
   if (!document.querySelector(".bottom-nav")) {
     document.body.insertAdjacentHTML("beforeend", bottomNavHTML);
   }
 
   setActiveBottomNav();
 
-  // Wire "More"
   const openBtn = document.querySelector('[data-action="open-more"]');
   if (openBtn) openBtn.addEventListener("click", openMore);
 
@@ -137,12 +129,10 @@ function init() {
     el.addEventListener("click", closeMore);
   });
 
-  // Escape closes More
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeMore();
   });
 
-  // Logout
   const mobileLogout = document.getElementById("mobileLogoutBtn");
   if (mobileLogout) {
     mobileLogout.addEventListener("click", (e) => {
@@ -152,10 +142,9 @@ function init() {
     });
   }
 
-  // If you click a link inside the sheet, close it
   document.querySelectorAll("#moreSheet a.more-sheet__link").forEach(a => {
     if (a.id === "mobileLogoutBtn") return;
-    a.addEventListener("click", () => closeMore());
+    a.addEventListener("click", closeMore);
   });
 }
 
