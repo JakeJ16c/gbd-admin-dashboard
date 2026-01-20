@@ -9,13 +9,12 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" 
         integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" 
         crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <!-- Manifest -->
-  <link rel="manifest" href="manifest.webmanifest">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<!-- Added favicon link -->
-  <link rel="icon" href="icon-192.png" type="image/png">
-    
-  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="icon" href="/icon-192.png" type="image/png">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="responsive.css">
+
   <style>
     main {
       padding: 2rem;
@@ -745,7 +744,7 @@ input:checked + .slider:before {
 }
   </style>
 </head>
-<body>
+<body class="page-products">
 
   <header>
     <button class="menu-toggle" id="menu-toggle">
@@ -937,17 +936,10 @@ input:checked + .slider:before {
     </div>
   </div>
 
-
-  <!-- Admin Auth Script (handles login gating) -->
-  <script type="module" src="admin-auth.js"></script>
-  
-  <!-- Product Management Script -->
-  <script type="module" src="products.js"></script>
-
   <!-- PWA Service Worker Registration -->
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
+      navigator.serviceWorker.register('/sw.js');
     }
   </script>
   
@@ -1101,7 +1093,9 @@ document.addEventListener("DOMContentLoaded", () => {
   loadToggleState();
 </script>
 
-  <script src="update-popup.js"></script>
-  <script type="module" src="mobile-nav.js"></script>
+  <script type="module" src="/admin-auth.js"></script>
+  <script type="module" src="/products.js"></script>
+  <script src="/update-popup.js"></script>
+  <script type="module" src="/mobile-nav.js"></script>
 </body>
 </html>
