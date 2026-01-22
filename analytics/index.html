@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard (Analytics)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+        integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/layout/layout.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="app-shell">
+  <aside id="sidebar-slot"></aside>
+
+  <div class="app-main">
+    <div id="header-slot"></div>
+
+    <main class="page-content">
+    <div class="analytics-container">
+      <div class="analytics-summary">
+        <div class="metric">
+          <h3>Total Orders</h3>
+          <p id="totalOrders">0</p>
+        </div>
+        <div class="metric">
+          <h3>Total Revenue</h3>
+          <p id="totalRevenue">£0</p>
+        </div>
+        <div class="metric">
+          <h3>Total Products</h3>
+          <p id="totalProducts">0</p>
+        </div>
+
+        <div class="metric">
+          <h3>Total Visits</h3>
+          <p id="totalVisits">0</p>
+        </div>
+      </div>
+      <canvas id="salesChart" height="200"></canvas>
+    </div>
+  </main>
+      <div id="bottomnav-slot"></div>
+  </div>
+</div>
+
+  <script type="module" src="/admin-auth.js"></script>
+  <script type="module" src="analytics.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+
+  <script src="update-popup.js"></script>
+  <script type="module" src="/layout/layout.js"></script>
+</body>
+</html>
