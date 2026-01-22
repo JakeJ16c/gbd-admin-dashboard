@@ -14,8 +14,8 @@ const ADMIN_BOOTSTRAP_SECRET = defineSecret("ADMIN_BOOTSTRAP_SECRET");
 exports.bootstrapAdmin = onCall(
   { secrets: [ADMIN_BOOTSTRAP_SECRET] },
   async (request) => {
-    const secret = request.data?.secret;
-    const email = request.data?.email;
+    const secret = request.data && request.data.secret;
+    const email = request.data && request.data.email;
 
     if (!secret || !email) {
       throw new HttpsError("invalid-argument", "Missing email or secret.");
@@ -34,7 +34,7 @@ exports.bootstrapAdmin = onCall(
 
 exports.getVisitsSummary = onCall(async (request) => {
   // Admin only
-  if (!request.auth?.token?.admin) {
+  if (!request.auth || !request.auth.token || request.auth.token.admin !== true) {
     throw new HttpsError("permission-denied", "Admin only.");
   }
 
