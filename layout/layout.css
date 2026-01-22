@@ -78,7 +78,7 @@ body{
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   text-decoration: none;
   color: var(--text);
   font-weight: 600;
