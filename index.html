@@ -160,28 +160,13 @@
   </style>
 
 </head>
-<body>
+<body class="page-products" data-page="product-management">
+  <div class="app-shell">
+    <aside id="sidebar-slot"></aside>
 
-  <header>
-    <h1>You're So Golden Admin</h1>
-  </header>
-<main>
-  <div class="sidebar">
-    <h2>Welcome, Daisy</h2>
-    <a href="index.html"><i class="fas fa-house"></i> Home</a>
-    <a href="products.html"><i class="fas fa-store"></i> Product Management</a>
-    <a href="orders.html"><i class="fas fa-box"></i> Order Management</a>
-    <a href="analytics.html"><i class="fas fa-chart-line"></i> Analytics</a>
-    <a href="index.html"><i class="fas fa-receipt"></i> Expenses</a>
-    <a href="reviews.html"><i class="fa-solid fa-star"></i> Reviews</a>
-    <a href="site-design.html"><i class="fas fa-paint-brush"></i> Site Design</a>
-    <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
-    <a href="#"><i class="fas fa-sign-out-alt"></i> Log Out</a>
-  </div>
-
-  <div class="overlay" id="overlay"></div>
-
-  
+    <div class="app-main">
+      <div id="header-slot"></div>
+<main class="page-content">
       <!-- Admin Dashboard Summary Layout -->
       <div class="dashboard-sections">
         
@@ -265,6 +250,9 @@
     </div>
     
   </main>
+        <div id="bottomnav-slot"></div>
+    </div>
+  </div>
 
   <!-- Admin Auth Script (handles login gating) -->
   <script type="module" src="admin-auth.js"></script>
@@ -579,6 +567,6 @@ onSnapshot(collection(db, "waitinglist"), (snapshot) => {
 
 loadWaitingList();
 </script>
-<script type="module" src="mobile-nav.js"></script>
+<script type="module" src="/layout/layout.js"></script>
 </body>
 </html>
