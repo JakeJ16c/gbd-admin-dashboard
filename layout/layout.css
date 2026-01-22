@@ -147,7 +147,7 @@ body{
 .profile-avatar{
   width: 34px;
   height: 34px;
-  border-radius: 12px;
+  border-radius: 30px;
   background: rgba(32, 78, 207, 0.12);
   color: #204ECF;
   display: grid;
