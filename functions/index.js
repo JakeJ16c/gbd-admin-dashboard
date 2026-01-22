@@ -31,3 +31,17 @@ exports.bootstrapAdmin = onCall(
     return { ok: true, uid: user.uid, email };
   }
 );
+
+exports.getVisitsSummary = onCall(async (request) => {
+  // Admin only
+  if (!request.auth?.token?.admin) {
+    throw new HttpsError("permission-denied", "Admin only.");
+  }
+
+  // STUB for now (Stage 3 will replace with real GA4)
+  return {
+    today: 0,
+    monthToDate: 0,
+    allTime: 0
+  };
+});
