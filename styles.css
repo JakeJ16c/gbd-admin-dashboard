@@ -45,8 +45,8 @@
       position: fixed;
       top: 0;
       height: 100%;
-      background-color: var(--electric-blue);
-      color: white;
+      background-color: white;
+      color: #030213;
       padding: 2rem 1rem;
       z-index: 1000;
     }
@@ -59,7 +59,7 @@
       margin-bottom: 2rem;
     }
     .sidebar a {
-      color: white;
+      color: #030213;
       text-decoration: none;
       display: block;
       margin-bottom: 1rem;
@@ -68,7 +68,7 @@
       transition: background 0.4s ease;
     }
     .sidebar a:hover {
-      background-color: rgba(255, 255, 255, 0.2);
+      background-color: #CCE0FF;
     }
     .overlay {
       display: none;
