@@ -17,32 +17,17 @@
     
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="order-management-styles.css">
+  <link rel="stylesheet" href="/layout/layout.css">
 
 </head>
-<body>
+<body class="page-orders" data-page="order-management">
+<div class="app-shell">
+  <aside id="sidebar-slot"></aside>
 
-  <header>
-    <button class="menu-toggle" id="menu-toggle">
-      <i class="fa-solid fa-bars"></i> Menu
-    </button>
-    <h1>You're So Golden Admin</h1>
-  </header>
+  <div class="app-main">
+    <div id="header-slot"></div>
 
-  <div class="sidebar" id="sidebar">
-    <h2>Welcome, Daisy</h2>
-    <a href="index.html"><i class="fas fa-house"></i> Home</a>
-    <a href="products.html"><i class="fas fa-store"></i> Product Management</a>
-    <a href="orders.html" class="active"><i class="fas fa-box"></i> Order Management</a>
-    <a href="analytics.html"><i class="fas fa-chart-line"></i> Analytics</a>
-    <a href="reviews.html"><i class="fa-solid fa-star"></i> Reviews</a>
-    <a href="site-design.html"><i class="fas fa-paint-brush"></i> Site Design</a>
-    <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
-    <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Log Out</a>
-  </div>
-
-  <div class="overlay" id="overlay"></div>
-
-  <main>
+  <main class="page-content">
     <div class="orders-container">
       <div class="orders-header">
         <h2><i class="fas fa-box"></i> Order Management</h2>
@@ -91,7 +76,9 @@
       </div>
     </div>
   </main>
-
+    <div id="bottomnav-slot"></div>
+  </div>
+</div>
   <!-- Order Detail Modal -->
   <div id="orderDetailModal" class="modal">
     <div class="modal-content">
@@ -180,5 +167,6 @@
   </script>
 
   <script src="update-popup.js"></script>
+  <script type="module" src="/layout/layout.js"></script>
 </body>
 </html>
