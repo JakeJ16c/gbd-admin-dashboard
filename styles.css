@@ -37,52 +37,7 @@
       text-shadow: 1px 1px 0 #fff;
       margin: 0;
     }
-    
-    .menu-toggle i {
-      font-size: 1rem;
-    }
-    .sidebar {
-      position: fixed;
-      top: 0;
-      height: 100%;
-      background-color: white;
-      color: #030213;
-      padding: 2rem 1rem;
-      z-index: 1000;
-    }
-    .sidebar.show {
-      left: 0;
-    }
-    .sidebar h2 {
-      margin-top: 0;
-      font-size: 1.4rem;
-      margin-bottom: 2rem;
-    }
-    .sidebar a {
-      color: #030213;
-      text-decoration: none;
-      display: block;
-      margin-bottom: 1rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: 5px;
-      transition: background 0.4s ease;
-    }
-    .sidebar a:hover {
-      background-color: #CCE0FF;
-    }
-    .overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100%;
-      width: 100%;
-      background: rgba(0, 0, 0, 0.4);
-      z-index: 999;
-    }
-    .overlay.show {
-      display: block;
-    }
+
     main {
       flex: 1;
     }
