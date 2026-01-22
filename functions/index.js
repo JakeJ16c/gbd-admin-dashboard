@@ -34,7 +34,13 @@ exports.bootstrapAdmin = onCall(
 
 exports.getVisitsSummary = onCall(async (request) => {
   // Admin only
-  if (!request.auth || !request.auth.token || request.auth.token.admin !== true) {
+  const isAdmin = !!(
+    request.auth &&
+    request.auth.token &&
+    request.auth.token.admin === true
+  );
+
+  if (!isAdmin) {
     throw new HttpsError("permission-denied", "Admin only.");
   }
 
