@@ -21,7 +21,6 @@ const prevPageBtn = document.getElementById("prevPage");
 const nextPageBtn = document.getElementById("nextPage");
 const logoutBtn = document.getElementById("logoutBtn");
 const addProductBtn = document.getElementById("addProductBtn");
-
 const productModal = document.getElementById("productModal");
 const closeProductModal = document.getElementById("closeProductModal");
 const saveProductChanges = document.getElementById("saveProductChanges");
@@ -35,6 +34,10 @@ const dynamicSizeList = document.getElementById("dynamicSizeList");
 let imageUpload = null;
 const imageUploadInput = document.getElementById("imageUpload");
 const imagePreviewContainer = document.getElementById("imagePreviewContainer");
+
+document.addEventListener("click", () => {
+  document.querySelectorAll(".pm-menu-dropdown.open").forEach(d => d.classList.remove("open"));
+});
 
 // ==== Category combobox (input + datalist) ====
 let categoryInputEl = document.getElementById("modalCategoryInput");
@@ -618,15 +621,29 @@ function renderProducts(products) {
         <td><span class="product-stock ${status.cls}">${status.label}</span></td>
         <td><span class="pm-vis ${vis.cls}">${vis.label}</span></td>
         <td class="pm-actions">
-          <button class="action-btn" data-action="edit"><i class="fa-solid fa-pen"></i></button>
-          <button class="action-btn" data-action="delete"><i class="fa-solid fa-trash"></i></button>
-          <button class="action-btn" data-action="archive"><i class="fa-solid fa-box-archive"></i></button>
+          <div class="pm-menu">
+            <button class="pm-menu-btn" type="button" aria-label="More actions">⋮</button>
+            <div class="pm-menu-dropdown">
+              <button type="button" data-action="edit"><i class="fa-solid fa-pen"></i> Edit</button>
+              <button type="button" data-action="archive"><i class="fa-solid fa-box-archive"></i> Archive</button>
+              <button type="button" class="danger" data-action="delete"><i class="fa-solid fa-trash"></i> Delete</button>
+            </div>
+          </div>
         </td>
       `;
 
-      tr.querySelector('[data-action="edit"]').onclick = () => openEditModal(product);
-      tr.querySelector('[data-action="delete"]').onclick = () => deleteProduct(product.id);
-      tr.querySelector('[data-action="archive"]').onclick = () => toggleArchive(product);
+      const menu = tr.querySelector(".pm-menu");
+      const btn = tr.querySelector(".pm-menu-btn");
+      const dd  = tr.querySelector(".pm-menu-dropdown");
+      
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        dd.classList.toggle("open");
+      };
+      
+      dd.querySelector('[data-action="edit"]').onclick = () => openEditModal(product);
+      dd.querySelector('[data-action="delete"]').onclick = () => deleteProduct(product.id);
+      dd.querySelector('[data-action="archive"]').onclick = () => toggleArchive(product);
 
       tbody.appendChild(tr);
     });
