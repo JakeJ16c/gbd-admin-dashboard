@@ -1,7 +1,7 @@
 /* Product Management – quick mobile cleanup */
 @media (max-width: 768px) {
-  .page-products main {
-    padding: 12px !important; /* overrides products.html inline padding */
+  main {
+    padding: 1.5rem !important; /* overrides products.html inline padding */
   }
 
   .page-products .products-header {
