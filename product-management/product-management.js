@@ -496,7 +496,7 @@ function renderProducts(products) {
     card.innerHTML = `
       <div style="display: flex; align-items: center; width: 100%;">
         <img src="${product.images?.[0] || '../icon-512.png'}" alt="${product.name}" style="
-          width: 80px; height: 80px; object-fit: cover;
+          width: 75px; height: 75px; object-fit: cover;
           border-radius: 12px; margin-right: 16px; flex-shrink: 0;">
         <div style="flex-grow: 1;">
           <h3 style="margin: 0; font-size: 1.1rem;">${product.name}</h3>
