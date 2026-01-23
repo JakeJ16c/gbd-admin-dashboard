@@ -1,8 +1,4 @@
-// add-product/add-product.js
-// Saves products using the SAME schema style as your existing Products page (products.js)
-
-import { db } from "../firebase.js";
-
+import { auth, db } from "../firebase.js";
 import {
   collection,
   addDoc,
@@ -10,7 +6,6 @@ import {
   getDoc,
   setDoc
 } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-
 import {
   getStorage,
   ref,
@@ -21,139 +16,32 @@ import {
 // --------------------
 // DOM
 // --------------------
+const form = document.getElementById("addProductForm");
 const cancelBtn = document.getElementById("cancelBtn");
 const saveBtn = document.getElementById("saveBtn");
 
-const sizeMode = document.getElementById("sizeMode");
+const nameEl = document.getElementById("name");
+const categoryEl = document.getElementById("category");
+const designEl = document.getElementById("design");
+const priceEl = document.getElementById("price");
+const descEl = document.getElementById("description");
+const weightEl = document.getElementById("weight");
+
+const sizeModeWrap = document.getElementById("sizeMode");
 const oneSizeStockWrap = document.getElementById("oneSizeStockWrap");
 const multiSizeWrap = document.getElementById("multiSizeWrap");
+const stockOneEl = document.getElementById("stockOne");
 const sizesList = document.getElementById("sizesList");
 const addSizeBtn = document.getElementById("addSizeBtn");
 
 const dropzone = document.getElementById("dropzone");
 const imageInput = document.getElementById("imageInput");
-const thumbs = document.getElementById("thumbs");
+const previewGrid = document.getElementById("previewGrid");
 
-// Fields
-const nameEl = document.getElementById("name");
-const priceEl = document.getElementById("price");
-const categoryEl = document.getElementById("category");
-const designEl = document.getElementById("design");
-const descEl = document.getElementById("desc");
-const stockOneEl = document.getElementById("stockOne");
-
-// (These exist in HTML but we won't save them to match old schema)
-const skuEl = document.getElementById("sku");
-const weightEl = document.getElementById("weight");
-
-// --------------------
-// State
-// --------------------
 const storage = getStorage();
-let selectedFiles = []; // File[]
-const MAX_IMAGES = 10;
-const MAX_MB = 10;
 
 // --------------------
-// Navigation
-// --------------------
-cancelBtn.addEventListener("click", () => {
-  window.location.href = "/product-management/";
-});
-
-// --------------------
-// Sizes UI
-// --------------------
-sizeMode.addEventListener("change", (e) => {
-  if (e.target.name !== "sizes") return;
-
-  const mode = e.target.value;
-
-  if (mode === "one") {
-    oneSizeStockWrap.style.display = "block";
-    multiSizeWrap.style.display = "none";
-  } else {
-    oneSizeStockWrap.style.display = "none";
-    multiSizeWrap.style.display = "block";
-    if (!sizesList.children.length) addSizeRow();
-  }
-});
-
-function addSizeRow(size = "", qty = "") {
-  const row = document.createElement("div");
-  row.className = "addp-size-row";
-  row.innerHTML = `
-    <input class="size-name" type="text" placeholder="Size (e.g. S)" value="${size}">
-    <input class="size-qty" type="number" min="0" placeholder="Qty" value="${qty}">
-  `;
-  sizesList.appendChild(row);
-}
-
-addSizeBtn.addEventListener("click", () => addSizeRow());
-
-// --------------------
-// Images (click + drag/drop)
-// --------------------
-dropzone.addEventListener("click", () => imageInput.click());
-
-dropzone.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  dropzone.classList.add("dragover");
-});
-dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
-dropzone.addEventListener("drop", (e) => {
-  e.preventDefault();
-  dropzone.classList.remove("dragover");
-  handleFiles(Array.from(e.dataTransfer.files || []));
-});
-
-imageInput.addEventListener("change", (e) => {
-  handleFiles(Array.from(e.target.files || []));
-  imageInput.value = "";
-});
-
-function handleFiles(files) {
-  const incoming = files.filter((f) => f.type.startsWith("image/"));
-  if (!incoming.length) return;
-
-  for (const f of incoming) {
-    const mb = f.size / (1024 * 1024);
-    if (mb > MAX_MB) {
-      alert(`"${f.name}" is larger than ${MAX_MB}MB.`);
-      return;
-    }
-  }
-
-  const spaceLeft = MAX_IMAGES - selectedFiles.length;
-  if (spaceLeft <= 0) {
-    alert(`You can upload up to ${MAX_IMAGES} images.`);
-    return;
-  }
-
-  selectedFiles = selectedFiles.concat(incoming.slice(0, spaceLeft));
-  renderThumbs();
-}
-
-function renderThumbs() {
-  thumbs.innerHTML = "";
-  selectedFiles.forEach((file, idx) => {
-    const url = URL.createObjectURL(file);
-    const card = document.createElement("div");
-    card.className = "addp-thumb";
-    card.innerHTML = `
-      <img src="${url}" alt="">
-      <button class="addp-thumb-x" type="button" title="Remove">×</button>
-    `;
-    card.querySelector("button").onclick = () => {
-      selectedFiles.splice(idx, 1);
-      renderThumbs();
-    };
-    thumbs.appendChild(card);
-  });
-}
-
-// --------------------
-// Helpers (match existing style)
+// Helpers
 // --------------------
 function slugify(str) {
   return String(str || "")
@@ -163,136 +51,264 @@ function slugify(str) {
     .replace(/^-+|-+$/g, "");
 }
 
-async function ensureDocIfMissing(collectionName, name) {
+function safeFileName(name) {
+  return String(name || "file")
+    .trim()
+    .replace(/[^a-z0-9.]+/gi, "_");
+}
+
+function setSaving(isSaving) {
+  saveBtn.disabled = isSaving;
+  cancelBtn.disabled = isSaving;
+  saveBtn.textContent = isSaving ? "Saving..." : "Save Product";
+}
+
+function getCheckedValue(name) {
+  return document.querySelector(`input[name="${name}"]:checked`)?.value || "";
+}
+
+async function ensureNamedDoc(collectionName, name) {
   const n = String(name || "").trim();
   if (!n) return;
 
   const slug = slugify(n);
+  if (!slug) return;
+
   const refDoc = doc(db, collectionName, slug);
-
   const snap = await getDoc(refDoc);
-  if (snap.exists()) return;
 
-  // Match your existing pattern: { name, createdAt: new Date() }
-  await setDoc(refDoc, { name: n, createdAt: new Date() });
-}
-
-function getPublishValue() {
-  return document.querySelector('input[name="publish"]:checked')?.value || "live";
-}
-
-function getSizesMode() {
-  return document.querySelector('input[name="sizes"]:checked')?.value || "one";
-}
-
-function buildStock() {
-  const mode = getSizesMode();
-
-  if (mode === "one") {
-    const qty = parseInt(stockOneEl.value || "0", 10);
-    if (Number.isNaN(qty) || qty < 0) {
-      return { ok: false, message: "Stock must be 0 or more." };
-    }
-    return { ok: true, oneSizeOnly: true, stock: qty };
+  if (!snap.exists()) {
+    // Use merge so we never clobber if you later add fields
+    await setDoc(
+      refDoc,
+      { name: n, createdAt: new Date() },
+      { merge: true }
+    );
   }
-
-  const rows = Array.from(sizesList.querySelectorAll(".addp-size-row"));
-  const stockObj = {};
-
-  for (const r of rows) {
-    const size = r.querySelector(".size-name")?.value.trim();
-    const qtyRaw = r.querySelector(".size-qty")?.value;
-    const qty = parseInt(qtyRaw || "0", 10);
-
-    if (!size) continue;
-    if (Number.isNaN(qty) || qty < 0) {
-      return { ok: false, message: "Each size quantity must be 0 or more." };
-    }
-
-    stockObj[size] = qty;
-  }
-
-  if (!Object.keys(stockObj).length) {
-    return { ok: false, message: "Add at least one size with stock." };
-  }
-
-  return { ok: true, oneSizeOnly: false, stock: stockObj };
-}
-
-function sanitizeFileName(name) {
-  return String(name || "image").replace(/[^a-z0-9.]/gi, "_").slice(0, 120);
 }
 
 // --------------------
-// Save Product
+// Size UI
+// --------------------
+function addSizeRow(size = "", qty = "") {
+  const row = document.createElement("div");
+  row.className = "addp-size-row";
+
+  row.innerHTML = `
+    <input class="size-name" type="text" placeholder="Size (e.g. S)" value="${String(size).replace(/"/g, "&quot;")}">
+    <input class="size-qty" type="number" min="0" placeholder="Qty" value="${String(qty).replace(/"/g, "&quot;")}">
+    <button type="button" class="size-remove" aria-label="Remove size">✕</button>
+  `;
+
+  row.querySelector(".size-remove").addEventListener("click", () => {
+    row.remove();
+  });
+
+  sizesList.appendChild(row);
+}
+
+function setMode(mode) {
+  if (mode === "one") {
+    oneSizeStockWrap.style.display = "block";
+    multiSizeWrap.style.display = "none";
+  } else {
+    oneSizeStockWrap.style.display = "none";
+    multiSizeWrap.style.display = "block";
+    if (!sizesList.children.length) addSizeRow();
+  }
+}
+
+// Initial mode from checked radio
+setMode(getCheckedValue("sizes") || "one");
+
+sizeModeWrap.addEventListener("change", (e) => {
+  if (e.target?.name !== "sizes") return;
+  setMode(e.target.value);
+});
+
+addSizeBtn.addEventListener("click", () => addSizeRow());
+
+// --------------------
+// Image handling
+// --------------------
+let selectedFiles = []; // File[]
+let previewUrls = [];   // string[] (object URLs)
+
+function clearPreviews() {
+  previewUrls.forEach((u) => URL.revokeObjectURL(u));
+  previewUrls = [];
+  previewGrid.innerHTML = "";
+}
+
+function renderPreviews() {
+  clearPreviews();
+
+  selectedFiles.forEach((file, idx) => {
+    const url = URL.createObjectURL(file);
+    previewUrls.push(url);
+
+    const card = document.createElement("div");
+    card.className = "addp-preview-card";
+    card.innerHTML = `
+      <img src="${url}" alt="">
+      <button type="button" class="addp-preview-remove" aria-label="Remove image">✕</button>
+    `;
+
+    card.querySelector(".addp-preview-remove").addEventListener("click", () => {
+      selectedFiles.splice(idx, 1);
+      renderPreviews();
+    });
+
+    previewGrid.appendChild(card);
+  });
+}
+
+function addFiles(files) {
+  const incoming = Array.from(files || []).filter(Boolean);
+
+  // Keep it sane (optional cap)
+  const MAX = 12;
+  selectedFiles = selectedFiles.concat(incoming).slice(0, MAX);
+
+  renderPreviews();
+}
+
+dropzone.addEventListener("click", () => imageInput.click());
+
+dropzone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  dropzone.classList.add("dragover");
+});
+
+dropzone.addEventListener("dragleave", () => {
+  dropzone.classList.remove("dragover");
+});
+
+dropzone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropzone.classList.remove("dragover");
+  addFiles(e.dataTransfer?.files);
+});
+
+imageInput.addEventListener("change", (e) => {
+  addFiles(e.target.files);
+  // allow selecting same file again
+  imageInput.value = "";
+});
+
+// --------------------
+// Navigation
+// --------------------
+cancelBtn.addEventListener("click", () => {
+  window.location.href = "/product-management/";
+});
+
+// --------------------
+// SAVE
 // --------------------
 saveBtn.addEventListener("click", async () => {
-  // 1) Collect + validate
+  // Basic auth sanity check
+  if (!auth.currentUser) {
+    alert("You're not logged in. Please refresh and sign in again.");
+    return;
+  }
+
   const name = nameEl.value.trim();
-  const price = parseFloat(priceEl.value);
   const category = categoryEl.value.trim();
   const design = designEl.value.trim();
   const description = descEl.value.trim();
 
+  const price = parseFloat(priceEl.value);
+  const weight = parseFloat(weightEl.value || "0");
+
+  const sizesMode = getCheckedValue("sizes") || "one";
+  const oneSizeOnly = sizesMode === "one";
+
+  const publishChoice = getCheckedValue("publish") || "archived";
+  const archived = publishChoice === "archived";
+  const published = publishChoice === "published";
+
+  // This is what your product-management table reads to show Published/Draft
+  const visibility = published ? "published" : "draft";
+
+  // Stock
+  let stock;
+  if (oneSizeOnly) {
+    stock = parseInt(stockOneEl.value || "0", 10);
+    if (Number.isNaN(stock)) stock = 0;
+  } else {
+    const stockObj = {};
+    const rows = sizesList.querySelectorAll(".addp-size-row");
+    rows.forEach((row) => {
+      const s = row.querySelector(".size-name")?.value?.trim();
+      const q = parseInt(row.querySelector(".size-qty")?.value || "0", 10);
+      if (!s) return;
+      stockObj[s] = Number.isNaN(q) ? 0 : q;
+    });
+    stock = stockObj;
+  }
+
+  // Validation (match how your existing modal behaves)
   if (!name) return alert("Product name is required.");
-  if (Number.isNaN(price)) return alert("Price is required.");
+  if (Number.isNaN(price)) return alert("Please enter a valid price.");
   if (!category) return alert("Category is required.");
   if (!design) return alert("Design is required.");
-  if (!description) return alert("Description is required.");
-  if (!selectedFiles.length) return alert("Please add at least 1 product image.");
 
-  const stockRes = buildStock();
-  if (!stockRes.ok) return alert(stockRes.message);
+  if (!oneSizeOnly && (!stock || Object.keys(stock).length === 0)) {
+    return alert("Please add at least one size with stock.");
+  }
 
-  // Publish mode controls archived (matches your Products list behaviour)
-  const publish = getPublishValue(); // draft | live
-  const archived = publish !== "live";
-
-  // 2) Lock UI
-  saveBtn.disabled = true;
-  const prevText = saveBtn.textContent;
-  saveBtn.textContent = "Saving...";
+  setSaving(true);
 
   try {
-    // 3) Ensure category/design docs (matches existing approach)
-    await ensureDocIfMissing("Categories", category);
-    await ensureDocIfMissing("Designs", design);
+    // Keep your supporting collections in sync
+    await ensureNamedDoc("Categories", category);
+    await ensureNamedDoc("Designs", design);
 
-    // 4) Upload images first (matches old uploader style)
-    const urls = [];
-
+    // Upload images (same style as your existing product-management)
+    const imageUrls = [];
     for (const file of selectedFiles) {
-      const path = `products/${Date.now()}_${sanitizeFileName(file.name)}`;
-      const imageRef = ref(storage, path);
+      const path = `products/${Date.now()}_${safeFileName(file.name)}`;
+      const fileRef = ref(storage, path);
 
-      await uploadBytes(imageRef, file);
-      const url = await getDownloadURL(imageRef);
-      urls.push(url);
+      await uploadBytes(fileRef, file);
+      const url = await getDownloadURL(fileRef);
+      imageUrls.push(url);
     }
 
-    // 5) Build product doc (match your existing schema)
-    const data = {
+    // Final product payload (schema aligned to your existing system)
+    const productData = {
       name,
       price,
-      stock: stockRes.stock,
-      oneSizeOnly: stockRes.oneSizeOnly,
-      description,
-      images: urls,
       category,
       design,
+      description,
+      images: imageUrls,
+      stock,
+      oneSizeOnly,
       archived,
-      updatedAt: new Date(),
-      createdAt: new Date()
+      published,
+      visibility,
+      weight: Number.isNaN(weight) ? 0 : weight,
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
-    await addDoc(collection(db, "Products"), data);
+    await addDoc(collection(db, "Products"), productData);
 
-    // 6) Done
+    // Done
     window.location.href = "/product-management/";
   } catch (err) {
     console.error("Add Product failed:", err);
-    alert("Couldn’t save product. Open console for details.");
-    saveBtn.disabled = false;
-    saveBtn.textContent = prevText;
+
+    // Make the popup actually useful
+    const msg =
+      err?.message ||
+      err?.code ||
+      "Unknown error. Check console for details.";
+
+    alert(`Couldn't save product:\n${msg}`);
+  } finally {
+    setSaving(false);
   }
 });
