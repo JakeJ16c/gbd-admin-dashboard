@@ -478,44 +478,6 @@ function renderProducts(products) {
   const archivedContainer = document.getElementById("ArchivedproductsTableContainer");
   if (archivedContainer) archivedContainer.innerHTML = "";
 
-  // Personalised toggle card
-  const toggleCard = document.createElement("div");
-  toggleCard.className = "product-card";
-  toggleCard.style.cssText = `
-    background: white;
-    border-radius: 12px;
-    margin: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  `;
-  toggleCard.innerHTML = `
-    <img src="icon-192.png" alt="Personalised Design" style="
-      width: 100px; height: 100px; object-fit: cover;
-      border-radius: 50%; margin-bottom: 12px;">
-    <h3 style="font-size: 1.1rem; margin: 8px 0;">Personalised Design</h3>
-    <p style="margin: 4px 0;"><strong>Show personalised design page ?</strong></p>
-    <label class="switch">
-      <input type="checkbox" id="personalisedToggle">
-      <span class="slider round"></span>
-    </label>
-  `;
-  (async () => {
-    const toggle = toggleCard.querySelector("#personalisedToggle");
-    const settingsRef = doc(db, "SiteSettings", "design");
-    try {
-      const snap = await getDoc(settingsRef);
-      if (snap.exists()) toggle.checked = snap.data().personalisedDesignEnabled ?? false;
-      toggle.addEventListener("change", async () => {
-        await setDoc(settingsRef, { personalisedDesignEnabled: toggle.checked }, { merge: true });
-      });
-    } catch (err) { console.error("❌ Failed to load personalised toggle:", err); }
-  })();
-  container.appendChild(toggleCard);
-
   products.forEach(product => {
     const card = document.createElement("div");
     card.className = "product-card";
