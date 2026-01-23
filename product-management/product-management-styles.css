@@ -88,6 +88,53 @@
       pointer-events: none;
       color: #999;
     }
+
+    .pm-product{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.pm-thumb{
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  object-fit:cover;
+  background:#f2f2f2;
+}
+
+.pm-meta .pm-name{
+  font-weight:600;
+}
+
+.pm-meta .pm-id{
+  font-size:12px;
+  color:#888;
+  margin-top:2px;
+}
+
+.pm-actions{
+  white-space: nowrap;
+  text-align: right;
+}
+
+.pm-vis{
+  display:inline-block;
+  padding:5px 10px;
+  border-radius:20px;
+  font-size:0.8rem;
+  font-weight:500;
+}
+
+.pm-vis.vis-live{
+  background:#d4edda;
+  color:#155724;
+}
+
+.pm-vis.vis-draft{
+  background:#e9ecef;
+  color:#555;
+}
     
     .products-table {
       width: 100%;
