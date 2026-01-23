@@ -473,113 +473,171 @@ async function loadProducts(paginate = false, direction = 'next') {
 // =======================
 // Render
 // =======================
+function stockTotal(product) {
+  const s = product?.stock;
+  if (s && typeof s === "object") {
+    return Object.values(s).reduce((a, b) => a + (Number(b) || 0), 0);
+  }
+  return Number(s) || 0;
+}
+
+function getStatusLabel(total) {
+  if (total <= 0) return { label: "Out of Stock", cls: "stock-out" };
+  if (total <= 5) return { label: "Low Stock", cls: "stock-low" };
+  return { label: "Active", cls: "stock-in" };
+}
+
+function getVisibility(product) {
+  const v = String(product?.visibility || product?.publish || "").toLowerCase();
+  const live =
+    product?.live === true ||
+    product?.published === true ||
+    v === "live" ||
+    v === "published";
+
+  return live
+    ? { label: "Published", cls: "vis-live" }
+    : { label: "Draft", cls: "vis-draft" };
+}
+
+function getSales(product) {
+  const n =
+    product?.sales ??
+    product?.salesCount ??
+    product?.unitsSold;
+
+  return (n === undefined || n === null) ? "—" : String(n);
+}
+
+async function openEditModal(product) {
+  selectedProductId = product.id;
+
+  modalName.value = product.name || "";
+  modalPrice.value = product.price ?? "";
+  modalDescription.value = product.description || "";
+
+  uploadedImages = product.images || [];
+  imagePreviewContainer.innerHTML = "";
+  uploadedImages.forEach((url) => {
+    const img = document.createElement("img");
+    img.src = url;
+    img.style.cssText = "width:60px;height:60px;margin-right:8px;border-radius:6px;";
+    imagePreviewContainer.appendChild(img);
+  });
+
+  await loadCategoryOptions();
+  await loadDesignOptions();
+
+  if (categoryInputEl) categoryInputEl.value = product.category || "";
+  if (designInputEl) designInputEl.value = product.design || "";
+  lastSelectedCategory = categoryInputEl?.value || "";
+  lastSelectedDesign = designInputEl?.value || "";
+
+  if (product.oneSizeOnly) {
+    oneSizeYes.checked = true;
+    oneSizeYes.dispatchEvent(new Event("change"));
+    modalStock.value = typeof product.stock === "number" ? product.stock : "";
+  } else {
+    oneSizeNo.checked = true;
+    oneSizeNo.dispatchEvent(new Event("change"));
+    dynamicSizeList.innerHTML = "";
+    Object.entries(product.stock || {}).forEach(([size, qty]) => {
+      const row = document.createElement("div");
+      row.classList.add("form-group");
+      row.innerHTML = `
+        <label>Size ${size}</label>
+        <input type="number" name="stock_${size}" value="${qty}" placeholder="Qty" class="form-control" />
+      `;
+      dynamicSizeList.appendChild(row);
+    });
+  }
+
+  productModal.style.display = "flex";
+}
+
+async function deleteProduct(productId) {
+  if (!confirm("Delete this product?")) return;
+  await deleteDoc(doc(db, "Products", productId));
+  loadProducts();
+}
+
+async function toggleArchive(product) {
+  await updateDoc(doc(db, "Products", product.id), { archived: !product.archived });
+  loadProducts();
+}
+
 function renderProducts(products) {
   container.innerHTML = "";
   const archivedContainer = document.getElementById("ArchivedproductsTableContainer");
   if (archivedContainer) archivedContainer.innerHTML = "";
 
-  products.forEach(product => {
-    const card = document.createElement("div");
-    card.className = "product-card";
-    card.style.cssText = `
-      background: white;
-      border-radius: 12px;
-      margin: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      padding: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      text-align: left;
+  const active = products.filter(p => !p.archived);
+  const archived = products.filter(p => p.archived);
+
+  function renderTable(targetEl, list) {
+    targetEl.innerHTML = `
+      <table class="products-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Sales</th>
+            <th>Status</th>
+            <th>Visibility</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     `;
 
-    card.innerHTML = `
-      <div style="display: flex; align-items: center; width: 100%;">
-        <img src="${product.images?.[0] || '../icon-512.png'}" alt="${product.name}" style="
-          width: 75px; height: 75px; object-fit: cover;
-          border-radius: 12px; margin-right: 16px; flex-shrink: 0;">
-        <div style="flex-grow: 1;">
-          <h3 style="margin: 0; font-size: 1.1rem;">${product.name}</h3>
-          <p style="margin: 4px 0;"><strong>£${Number(product.price).toFixed(2)}</strong></p>
-          <p style="margin: 4px 0; color: #777;">Stock: ${typeof product.stock === 'object' ? Object.values(product.stock).reduce((a,b)=>a+b,0) : product.stock ?? 0}</p>
-          ${product.category ? `<p style="margin: 2px 0; color:#555;">Category: ${product.category}</p>` : ""}
-          ${product.design ? `<p style="margin: 2px 0; color:#555;">Design: ${product.design}</p>` : ""}
-        </div>
-        <div style="display: flex; gap: 8px;">
-          <button class="edit-btn" data-id="${product.id}" style="padding:6px 10px;border-radius:6px;background:#204ECF;color:white;border:none;">Edit</button>
-          <button class="delete-btn" data-id="${product.id}" style="padding:6px 10px;border-radius:6px;background:#f87171;color:white;border:none;">Delete</button>
-          <button class="archive-btn" data-id="${product.id}" style="padding:6px 10px;border-radius:6px;background:#e0e0e0;color:black;border:none;">
-            ${product.archived ? 'Unarchive' : 'Archive'}
-          </button>
-        </div>
-      </div>
-    `;
+    const tbody = targetEl.querySelector("tbody");
 
-    // Edit button
-    card.querySelector('.edit-btn').onclick = async () => {
-      selectedProductId = product.id;
-      modalName.value = product.name || "";
-      modalPrice.value = product.price || "";
-      modalDescription.value = product.description || "";
+    list.forEach(product => {
+      const total = stockTotal(product);
+      const status = getStatusLabel(total);
+      const vis = getVisibility(product);
 
-      uploadedImages = product.images || [];
-      imagePreviewContainer.innerHTML = "";
-      uploadedImages.forEach((url) => {
-        const img = document.createElement("img");
-        img.src = url;
-        img.style.cssText = "width:60px;height:60px;margin-right:8px;border-radius:6px;";
-        imagePreviewContainer.appendChild(img);
-      });
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>
+          <div class="pm-product">
+            <img class="pm-thumb" src="${product.images?.[0] || "../icon-512.png"}" alt="">
+            <div class="pm-meta">
+              <div class="pm-name">${product.name || "Untitled"}</div>
+              <div class="pm-id">ID: ${product.id}</div>
+            </div>
+          </div>
+        </td>
+        <td>${product.category || "—"}</td>
+        <td class="product-price">£${Number(product.price || 0).toFixed(2)}</td>
+        <td>${total} units</td>
+        <td>${getSales(product)}</td>
+        <td><span class="product-stock ${status.cls}">${status.label}</span></td>
+        <td><span class="pm-vis ${vis.cls}">${vis.label}</span></td>
+        <td class="pm-actions">
+          <button class="action-btn" data-action="edit"><i class="fa-solid fa-pen"></i></button>
+          <button class="action-btn" data-action="delete"><i class="fa-solid fa-trash"></i></button>
+          <button class="action-btn" data-action="archive"><i class="fa-solid fa-box-archive"></i></button>
+        </td>
+      `;
 
-      await loadCategoryOptions();
-      await loadDesignOptions();
+      tr.querySelector('[data-action="edit"]').onclick = () => openEditModal(product);
+      tr.querySelector('[data-action="delete"]').onclick = () => deleteProduct(product.id);
+      tr.querySelector('[data-action="archive"]').onclick = () => toggleArchive(product);
 
-      if (categoryInputEl) categoryInputEl.value = product.category || "";
-      if (designInputEl)   designInputEl.value   = product.design   || "";
-      lastSelectedCategory = categoryInputEl?.value || "";
-      lastSelectedDesign   = designInputEl?.value   || "";
+      tbody.appendChild(tr);
+    });
 
-      if (product.oneSizeOnly) {
-        oneSizeYes.checked = true;
-        oneSizeYes.dispatchEvent(new Event("change"));
-        modalStock.value = typeof product.stock === 'number' ? product.stock : "";
-      } else {
-        oneSizeNo.checked = true;
-        oneSizeNo.dispatchEvent(new Event("change"));
-        dynamicSizeList.innerHTML = '';
-        Object.entries(product.stock || {}).forEach(([size, qty]) => {
-          const row = document.createElement("div");
-          row.classList.add("form-group");
-          row.innerHTML = `
-            <label>Size ${size}</label>
-            <input type="number" name="stock_${size}" value="${qty}" placeholder="Qty" class="form-control" />
-          `;
-          dynamicSizeList.appendChild(row);
-        });
-      }
-
-      productModal.style.display = "flex";
-    };
-
-    // Delete
-    card.querySelector('.delete-btn').onclick = () => {
-      if (confirm("Delete this product?")) {
-        deleteDoc(doc(db, "Products", product.id)).then(loadProducts);
-      }
-    };
-
-    // Archive/Unarchive
-    card.querySelector('.archive-btn').onclick = async () => {
-      await updateDoc(doc(db, "Products", product.id), { archived: !product.archived });
-      loadProducts();
-    };
-
-    if (product.archived && archivedContainer) {
-      archivedContainer.appendChild(card);
-    } else {
-      container.appendChild(card);
+    if (!list.length) {
+      targetEl.innerHTML = `<div class="empty-state"><i class="fas fa-box-open"></i><h3>No products</h3></div>`;
     }
-  });
+  }
+
+  renderTable(container, active);
+  if (archivedContainer) renderTable(archivedContainer, archived);
 }
 
 // =======================
