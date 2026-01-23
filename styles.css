@@ -212,24 +212,29 @@ body.more-open {
 
 /* Mobile behavior */
 @media (max-width: 768px) {
-  .bottom-nav {
+  /*
+    Legacy mobile rules:
+    Only apply these to pages that DON'T use the injected layout shell.
+    Injected-layout pages add body.layout-v2 via layout/layout.js.
+  */
+  body:not(.layout-v2) .bottom-nav {
     display: flex;
   }
 
-  /* Hide sidebar UX on mobile */
-  .sidebar,
-  .overlay,
-  #overlay,
-  .menu-toggle {
+  /* Hide legacy sidebar UX on mobile */
+  body:not(.layout-v2) .sidebar,
+  body:not(.layout-v2) .overlay,
+  body:not(.layout-v2) #overlay,
+  body:not(.layout-v2) .menu-toggle {
     display: none !important;
   }
 
-  /* prevent bottom nav overlap */
-  main {
+  /* prevent bottom nav overlap (legacy pages only) */
+  body:not(.layout-v2) main {
     padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 16px) !important;
   }
 
-  header h1 {
+  body:not(.layout-v2) header h1 {
     font-size: 1.25rem;
   }
 }

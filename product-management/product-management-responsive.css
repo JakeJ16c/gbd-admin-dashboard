@@ -1,25 +1,131 @@
-/* Product Management – quick mobile cleanup */
+/*
+  Product Management — mobile fit
+  Goal: keep ALL columns visible (no horizontal scroll), just tighter spacing.
+*/
+
 @media (max-width: 768px) {
-  main {
-    padding-top: 1.5rem;
-    padding: !important;
+  /* Go edge-to-edge (keep bottom-nav clearance) */
+  .page-products main.page-content {
+    padding: 0 0 calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 14px) !important;
+  }
+
+  /* Make the “card” fill the screen width */
+  .page-products .products-container {
+    border-radius: 0;
+    box-shadow: none;
+    margin-bottom: 14px;
   }
 
   .page-products .products-header {
-    padding: 12px 14px;
+    padding: 12px 12px;
+  }
+
+  .page-products .products-header h2 {
+    font-size: 16px;
+  }
+
+  .page-products .add-product-btn {
+    padding: 8px 10px;
+    font-size: 12px;
   }
 
   .page-products .products-controls {
-    padding: 12px 14px;
+    padding: 10px 12px;
+    gap: 8px;
   }
 
-  .page-products .products-container {
-    border-radius: 14px;
+  /* Search / filters stack tighter */
+  .page-products .search-box {
+    flex: 1 1 100%;
+    min-width: 0;
   }
 
-  /* Your products.js renders .product-card with margin:16px inline */
-  .page-products .product-card {
-    margin: 10px 0 !important;
-    border-radius: 14px !important;
+  .page-products .filter-controls {
+    width: 100%;
+    gap: 8px;
   }
+
+  .page-products .filter-dropdown {
+    margin-left: 0 !important; /* override inline margin-lefts */
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .page-products select {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+
+  /* Table spacing + typography */
+  .page-products .products-table th,
+  .page-products .products-table td {
+    padding: 8px 6px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .page-products .products-table th {
+    font-size: 11px;
+  }
+
+  /* Product cell */
+  .page-products .pm-thumb {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .page-products .pm-product {
+    gap: 8px;
+  }
+
+  .page-products .pm-meta .pm-name {
+    font-size: 12px;
+    line-height: 1.1;
+  }
+
+  .page-products .pm-meta .pm-id {
+    font-size: 10px;
+  }
+
+  /* Pills */
+  .page-products .product-stock,
+  .page-products .pm-vis {
+    font-size: 10px;
+    padding: 4px 8px;
+    min-width: 0;
+  }
+
+  /* Menu button */
+  .page-products .pm-menu-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+
+  /* Predictable column widths so nothing “balloons” */
+  .page-products .products-table th:nth-child(1),
+  .page-products .products-table td:nth-child(1) { width: 160px; } /* Product */
+
+  .page-products .products-table th:nth-child(2),
+  .page-products .products-table td:nth-child(2) { width: 80px; }  /* Category */
+
+  .page-products .products-table th:nth-child(3),
+  .page-products .products-table td:nth-child(3) { width: 70px; }  /* Price */
+
+  .page-products .products-table th:nth-child(4),
+  .page-products .products-table td:nth-child(4) { width: 70px; }  /* Stock */
+
+  .page-products .products-table th:nth-child(5),
+  .page-products .products-table td:nth-child(5) { width: 55px; }  /* Sales */
+
+  .page-products .products-table th:nth-child(6),
+  .page-products .products-table td:nth-child(6) { width: 80px; }  /* Status */
+
+  .page-products .products-table th:nth-child(7),
+  .page-products .products-table td:nth-child(7) { width: 80px; }  /* Visibility */
+
+  .page-products .products-table th:nth-child(8),
+  .page-products .products-table td:nth-child(8) { width: 40px; }  /* Actions */
 }

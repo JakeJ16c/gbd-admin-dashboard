@@ -65,6 +65,9 @@ function wireLogout() {
 }
 
 async function initLayout() {
+  // Mark pages that use the injected layout so legacy global CSS can be safely scoped.
+  document.body.classList.add("layout-v2");
+
   // These slots won't exist yet until we update a page later — that's fine.
   await inject("sidebar-slot", "sidebar.html");
   await inject("header-slot", "header.html");
