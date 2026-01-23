@@ -11,7 +11,7 @@ const dropzone = document.getElementById("dropzone");
 const imageInput = document.getElementById("imageInput");
 
 cancelBtn.addEventListener("click", () => {
-  window.location.href = "../products.html";
+  window.location.href = "/product-management/";
 });
 
 saveBtn.addEventListener("click", () => {
