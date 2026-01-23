@@ -1,7 +1,7 @@
 /* Product Management – quick mobile cleanup */
 @media (max-width: 768px) {
   main {
-    padding-top: 1.5rem
+    padding-top: 1.5rem;
     padding: !important;
   }
 
