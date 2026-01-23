@@ -1,19 +1,13 @@
-/*
-  Product Management — mobile fit
-  Goal: keep ALL columns visible (no horizontal scroll), just tighter spacing.
-*/
-
 @media (max-width: 768px) {
-  /* Go edge-to-edge (keep bottom-nav clearance) */
   .page-products main.page-content {
     padding: 0 0 calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 14px) !important;
   }
 
-  /* Make the “card” fill the screen width */
   .page-products .products-container {
     border-radius: 0;
     box-shadow: none;
-    margin-bottom: 14px;
+    margin-bottom: 20px;
+    margin-top: 20px;
   }
 
   .page-products .products-header {
