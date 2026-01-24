@@ -15,11 +15,14 @@ import {
   onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
 
+// ✅ proves the correct file is running
+console.log("[Analytics] analytics.js loaded at:", window.location.pathname);
+
 /** ---------- tiny UI helpers ---------- */
 function setText(id, value, fallback = "—") {
   const el = document.getElementById(id);
   if (!el) return;
-  // use nullish checks so 0 shows as "0"
+  // IMPORTANT: use nullish checks so 0 shows as "0"
   el.textContent = (value ?? fallback);
 }
 
@@ -35,7 +38,10 @@ function toNumber(v) {
 
 function formatGBP(n) {
   const num = toNumber(n);
-  return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(num);
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+  }).format(num);
 }
 
 /** ---------- Firestore totals ---------- */
@@ -48,14 +54,12 @@ async function loadOrdersAndRevenue() {
   snap.forEach((doc) => {
     ordersCount += 1;
     const d = doc.data() || {};
-
     revenue += toNumber(
       d.total ??
       d.totalAmount ??
       d.orderTotal ??
       d.amount ??
-      d.grandTotal ??
-      d.totalPrice
+      d.grandTotal
     );
   });
 
@@ -70,12 +74,12 @@ async function loadProductsCount() {
 
 /** ---------- Cloud Function: GA4 visits summary ---------- */
 async function loadVisitsSummary() {
-  // If your functions are NOT in us-central1, set the region here:
+  // If your callable functions are NOT us-central1, set region here:
   // const functions = getFunctions(app, "europe-west2");
   const functions = getFunctions(app);
 
   const fn = httpsCallable(functions, "getVisitsSummary");
-  const res = await fn(); // requires admin custom claim
+  const res = await fn(); // requires admin claim
   const data = res?.data || {};
 
   setText("visitsToday", data.today ?? 0, 0);
@@ -85,9 +89,7 @@ async function loadVisitsSummary() {
 
 /** ---------- main ---------- */
 async function loadAnalytics() {
-  console.log("[Analytics] boot");
-
-  // default visible values
+  // show 0s immediately (so you know script ran)
   setText("totalOrders", 0);
   setText("totalRevenue", formatGBP(0));
   setText("totalProducts", 0);
@@ -97,7 +99,10 @@ async function loadAnalytics() {
   setText("visitsAllTime", 0);
 
   try {
-    await Promise.all([loadOrdersAndRevenue(), loadProductsCount()]);
+    await Promise.all([
+      loadOrdersAndRevenue(),
+      loadProductsCount(),
+    ]);
   } catch (err) {
     console.error("[Analytics] Firestore load failed:", err);
   }
@@ -109,7 +114,7 @@ async function loadAnalytics() {
       await loadVisitsSummary();
     } catch (err) {
       console.error("[Analytics] getVisitsSummary failed:", err);
-      // keep visits as 0
+      // keep visits at 0
       setText("visitsToday", 0);
       setText("visitsThisMonth", 0);
       setText("visitsAllTime", 0);
@@ -117,9 +122,4 @@ async function loadAnalytics() {
   });
 }
 
-// run even if DOMContentLoaded already fired (module/caching edge cases)
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", loadAnalytics);
-} else {
-  loadAnalytics();
-}
+document.addEventListener("DOMContentLoaded", loadAnalytics);
