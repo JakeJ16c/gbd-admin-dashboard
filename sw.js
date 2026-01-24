@@ -14,7 +14,7 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_NAME = `admin-cache-${CACHE_VERSION}`;
 
 const toUrl = (path) => new URL(path, self.registration.scope).toString();
@@ -24,24 +24,35 @@ const PRECACHE_URLS = [
   './index.html',
   './login.html',
   './styles.css',
+  './firebase.js',
   './admin-auth.js',
-  './dashboard.js',
-  './notifications.js',
-  './products.html',
-  './products.js',
-  './orders.html',
-  './orders.js',
-  './settings.html',
-  './analytics.html',
-  './analytics.js',
-  './site-design.html',
-  './marquee-manager.js',
-  './welcome-modal.js',
   './update-popup.js',
   './manifest.webmanifest',
-  './icon-192.png',
-  './icon-512.png',
-  './apple-touch-icon.png'
+
+  // Shared layout partials
+  './layout/layout.js',
+  './layout/layout.css',
+  './layout/sidebar.html',
+  './layout/header.html',
+  './layout/bottomnav.html',
+
+  // Clean-URL pages
+  './product-management/index.html',
+  './product-management/product-management.js',
+  './product-management/product-management-styles.css',
+
+  './order-management/index.html',
+  './order-management/order-management.js',
+  './order-management/order-management-styles.css',
+
+  './analytics/index.html',
+  './analytics/analytics.js',
+
+  './settings/index.html',
+  './settings/settings-styles.css',
+
+  './add-product/index.html',
+  './add-product/add-product.js'
 ].map(toUrl);
 
 const OFFLINE_FALLBACK = toUrl('./index.html');
