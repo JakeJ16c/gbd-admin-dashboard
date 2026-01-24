@@ -70,14 +70,14 @@ body{
 .sidebar-nav{
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .nav-item{
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 14px 12px;
   border-radius: 8px;
   text-decoration: none;
   color: var(--text);
