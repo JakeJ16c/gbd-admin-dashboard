@@ -42,20 +42,16 @@ const stockOneEl = $("stockOne");
 const publishDraftNote = document.getElementById("publishDraftNote");
 
 function syncPublishNote() {
-  const publishValue =
-    document.querySelector('input[name="publish"]:checked')?.value;
+  const v = document.querySelector('input[name="publish"]:checked')?.value;
+  if (!publishDraftNote) return;
 
-  // show note only when "Archive Product" (draft) is selected
-  if (publishDraftNote) {
-    publishDraftNote.style.display = publishValue === "draft" ? "block" : "none";
-  }
+  // show note only when draft is selected
+  publishDraftNote.style.display = (v === "draft") ? "block" : "none";
 }
 
-// run once on load
 syncPublishNote();
 
-// re-run whenever publish option changes
-document.querySelectorAll('input[name="publish"]').forEach((r) => {
+document.querySelectorAll('input[name="publish"]').forEach(r => {
   r.addEventListener("change", syncPublishNote);
 });
 
