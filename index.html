@@ -514,59 +514,7 @@ document.addEventListener("click", async (e) => {
   }
 });
 
-
 loadPromoCodes();
-
-async function loadWaitingList() {
-  const listEl = document.getElementById("waitingListNames");
-  const countEl = document.getElementById("waitingListCount");
-
-  try {
-    const snap = await getDocs(collection(db, "waitinglist"));
-    const names = [];
-
-    snap.forEach(doc => {
-      const data = doc.data();
-      if (data.name) names.push(data.name);
-    });
-
-    listEl.innerHTML = names.length
-      ? names.map(name => `<li>${name}</li>`).join("")
-      : `<li style="color: #888;">No entries yet.</li>`;
-
-    countEl.textContent = `Counter: ${names.length}`;
-  } catch (err) {
-    console.error("❌ Failed to fetch waiting list:", err);
-    listEl.innerHTML = `<li style="color: red;">Error loading list</li>`;
-  }
-}
-
-function animateCounter(el, start, end, duration = 1200) {
-  const range = end - start;
-  let startTime = null;
-
-  function step(timestamp) {
-    if (!startTime) startTime = timestamp;
-    const progress = timestamp - startTime;
-    const percent = Math.min(progress / duration, 1);
-    const current = Math.floor(start + range * percent);
-    el.textContent = `Counter: ${current}`;
-    if (percent < 1) requestAnimationFrame(step);
-  }
-
-  requestAnimationFrame(step);
-}
-
-const counterEl = document.getElementById("waitingListCount");
-let lastCount = 0;
-
-onSnapshot(collection(db, "waitinglist"), (snapshot) => {
-  const newCount = snapshot.size;
-  animateCounter(counterEl, lastCount, newCount);
-  lastCount = newCount;
-});
-
-loadWaitingList();
 </script>
 <script type="module" src="/layout/layout.js"></script>
 </body>
