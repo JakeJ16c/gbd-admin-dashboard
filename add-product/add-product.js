@@ -1,314 +1,350 @@
-import { auth, db } from "../firebase.js";
+// add-product/add-product.js
+import { db, storage } from "../firebase.js";
+
 import {
   collection,
   addDoc,
   doc,
   getDoc,
-  setDoc
+  setDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
 import {
-  getStorage,
   ref,
   uploadBytes,
   getDownloadURL
 } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-storage.js";
 
-// --------------------
-// DOM
-// --------------------
-const form = document.getElementById("addProductForm");
-const cancelBtn = document.getElementById("cancelBtn");
-const saveBtn = document.getElementById("saveBtn");
+/* ---------------------------
+   Element helpers
+--------------------------- */
+const $ = (id) => document.getElementById(id);
 
-const nameEl = document.getElementById("name");
-const categoryEl = document.getElementById("category");
-const designEl = document.getElementById("design");
-const priceEl = document.getElementById("price");
-const descEl = document.getElementById("description");
-const weightEl = document.getElementById("weight");
+const cancelBtn = $("cancelBtn");
+const saveBtn = $("saveBtn");
 
-const sizeModeWrap = document.getElementById("sizeMode");
-const oneSizeStockWrap = document.getElementById("oneSizeStockWrap");
-const multiSizeWrap = document.getElementById("multiSizeWrap");
-const stockOneEl = document.getElementById("stockOne");
-const sizesList = document.getElementById("sizesList");
-const addSizeBtn = document.getElementById("addSizeBtn");
+const sizeMode = $("sizeMode");
+const oneSizeStockWrap = $("oneSizeStockWrap");
+const multiSizeWrap = $("multiSizeWrap");
+const sizesList = $("sizesList");
+const addSizeBtn = $("addSizeBtn");
 
-const dropzone = document.getElementById("dropzone");
-const imageInput = document.getElementById("imageInput");
-const previewGrid = document.getElementById("previewGrid");
+const dropzone = $("dropzone");
+const imageInput = $("imageInput");
+const thumbs = $("thumbs");
 
-const storage = getStorage();
+// Form fields (match your index.html ids)
+const nameEl = $("name");
+const priceEl = $("price");
+const categoryEl = $("category");
+const skuEl = $("sku");
+const designEl = $("design");
+const descEl = $("desc");
+const weightEl = $("weight");
 
-// --------------------
-// Helpers
-// --------------------
-function slugify(str) {
-  return String(str || "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+const stockOneEl = $("stockOne");
 
-function safeFileName(name) {
-  return String(name || "file")
-    .trim()
-    .replace(/[^a-z0-9.]+/gi, "_");
-}
-
-function setSaving(isSaving) {
-  saveBtn.disabled = isSaving;
-  cancelBtn.disabled = isSaving;
-  saveBtn.textContent = isSaving ? "Saving..." : "Save Product";
-}
-
-function getCheckedValue(name) {
-  return document.querySelector(`input[name="${name}"]:checked`)?.value || "";
-}
-
-async function ensureNamedDoc(collectionName, name) {
-  const n = String(name || "").trim();
-  if (!n) return;
-
-  const slug = slugify(n);
-  if (!slug) return;
-
-  const refDoc = doc(db, collectionName, slug);
-  const snap = await getDoc(refDoc);
-
-  if (!snap.exists()) {
-    // Use merge so we never clobber if you later add fields
-    await setDoc(
-      refDoc,
-      { name: n, createdAt: new Date() },
-      { merge: true }
-    );
-  }
-}
-
-// --------------------
-// Size UI
-// --------------------
-function addSizeRow(size = "", qty = "") {
-  const row = document.createElement("div");
-  row.className = "addp-size-row";
-
-  row.innerHTML = `
-    <input class="size-name" type="text" placeholder="Size (e.g. S)" value="${String(size).replace(/"/g, "&quot;")}">
-    <input class="size-qty" type="number" min="0" placeholder="Qty" value="${String(qty).replace(/"/g, "&quot;")}">
-    <button type="button" class="size-remove" aria-label="Remove size">✕</button>
-  `;
-
-  row.querySelector(".size-remove").addEventListener("click", () => {
-    row.remove();
-  });
-
-  sizesList.appendChild(row);
-}
-
-function setMode(mode) {
-  if (mode === "one") {
-    oneSizeStockWrap.style.display = "block";
-    multiSizeWrap.style.display = "none";
-  } else {
-    oneSizeStockWrap.style.display = "none";
-    multiSizeWrap.style.display = "block";
-    if (!sizesList.children.length) addSizeRow();
-  }
-}
-
-// Initial mode from checked radio
-setMode(getCheckedValue("sizes") || "one");
-
-sizeModeWrap.addEventListener("change", (e) => {
-  if (e.target?.name !== "sizes") return;
-  setMode(e.target.value);
-});
-
-addSizeBtn.addEventListener("click", () => addSizeRow());
-
-// --------------------
-// Image handling
-// --------------------
+/* ---------------------------
+   State
+--------------------------- */
 let selectedFiles = []; // File[]
-let previewUrls = [];   // string[] (object URLs)
+let isSaving = false;
 
-function clearPreviews() {
-  previewUrls.forEach((u) => URL.revokeObjectURL(u));
-  previewUrls = [];
-  previewGrid.innerHTML = "";
-}
-
-function renderPreviews() {
-  clearPreviews();
-
-  selectedFiles.forEach((file, idx) => {
-    const url = URL.createObjectURL(file);
-    previewUrls.push(url);
-
-    const card = document.createElement("div");
-    card.className = "addp-preview-card";
-    card.innerHTML = `
-      <img src="${url}" alt="">
-      <button type="button" class="addp-preview-remove" aria-label="Remove image">✕</button>
-    `;
-
-    card.querySelector(".addp-preview-remove").addEventListener("click", () => {
-      selectedFiles.splice(idx, 1);
-      renderPreviews();
-    });
-
-    previewGrid.appendChild(card);
-  });
-}
-
-function addFiles(files) {
-  const incoming = Array.from(files || []).filter(Boolean);
-
-  // Keep it sane (optional cap)
-  const MAX = 12;
-  selectedFiles = selectedFiles.concat(incoming).slice(0, MAX);
-
-  renderPreviews();
-}
-
-dropzone.addEventListener("click", () => imageInput.click());
-
-dropzone.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  dropzone.classList.add("dragover");
-});
-
-dropzone.addEventListener("dragleave", () => {
-  dropzone.classList.remove("dragover");
-});
-
-dropzone.addEventListener("drop", (e) => {
-  e.preventDefault();
-  dropzone.classList.remove("dragover");
-  addFiles(e.dataTransfer?.files);
-});
-
-imageInput.addEventListener("change", (e) => {
-  addFiles(e.target.files);
-  // allow selecting same file again
-  imageInput.value = "";
-});
-
-// --------------------
-// Navigation
-// --------------------
-cancelBtn.addEventListener("click", () => {
+/* ---------------------------
+   Nav
+--------------------------- */
+cancelBtn?.addEventListener("click", () => {
   window.location.href = "/product-management/";
 });
 
-// --------------------
-// SAVE
-// --------------------
-saveBtn.addEventListener("click", async () => {
-  // Basic auth sanity check
-  if (!auth.currentUser) {
-    alert("You're not logged in. Please refresh and sign in again.");
+/* ---------------------------
+   Size mode toggle
+--------------------------- */
+function showOneSize() {
+  oneSizeStockWrap.style.display = "block";
+  multiSizeWrap.style.display = "none";
+}
+function showMultiSize() {
+  oneSizeStockWrap.style.display = "none";
+  multiSizeWrap.style.display = "block";
+  if (!sizesList.children.length) addSizeRow();
+}
+
+sizeMode?.addEventListener("change", (e) => {
+  if (e.target?.name !== "sizes") return;
+  const mode = e.target.value;
+  if (mode === "one") showOneSize();
+  else showMultiSize();
+});
+
+// Default view
+showOneSize();
+
+function addSizeRow(size = "", qty = "") {
+  const row = document.createElement("div");
+  row.className = "addp-size-row";
+  row.innerHTML = `
+    <input class="size-name" type="text" placeholder="Size (e.g. S)" value="${escapeHtml(size)}">
+    <input class="size-qty" type="number" min="0" placeholder="Qty" value="${escapeHtml(qty)}">
+  `;
+  sizesList.appendChild(row);
+}
+
+addSizeBtn?.addEventListener("click", () => addSizeRow());
+
+/* ---------------------------
+   Images: click + drag/drop + previews
+--------------------------- */
+dropzone?.addEventListener("click", () => imageInput?.click());
+
+dropzone?.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  dropzone.style.borderColor = "rgba(32,78,207,0.6)";
+});
+
+dropzone?.addEventListener("dragleave", () => {
+  dropzone.style.borderColor = "rgba(0,0,0,0.18)";
+});
+
+dropzone?.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropzone.style.borderColor = "rgba(0,0,0,0.18)";
+  const files = Array.from(e.dataTransfer?.files || []);
+  addFiles(files);
+});
+
+imageInput?.addEventListener("change", (e) => {
+  const files = Array.from(e.target.files || []);
+  addFiles(files);
+  imageInput.value = ""; // allow selecting same file again
+});
+
+function addFiles(files) {
+  // Basic filters
+  const valid = files.filter((f) => f && f.type && f.type.startsWith("image/"));
+  if (!valid.length) return;
+
+  // Enforce max 10 images
+  const spaceLeft = 10 - selectedFiles.length;
+  if (spaceLeft <= 0) {
+    alert("You can upload up to 10 images.");
     return;
   }
 
-  const name = nameEl.value.trim();
-  const category = categoryEl.value.trim();
-  const design = designEl.value.trim();
-  const description = descEl.value.trim();
+  const toAdd = valid.slice(0, spaceLeft);
 
-  const price = parseFloat(priceEl.value);
-  const weight = parseFloat(weightEl.value || "0");
+  // Enforce ~10MB per image (matches UI text)
+  for (const f of toAdd) {
+    if (f.size > 10 * 1024 * 1024) {
+      alert(`"${f.name}" is over 10MB. Please choose a smaller image.`);
+      return;
+    }
+  }
 
-  const sizesMode = getCheckedValue("sizes") || "one";
-  const oneSizeOnly = sizesMode === "one";
+  selectedFiles = selectedFiles.concat(toAdd);
+  renderThumbs();
+}
 
-  const publishChoice = getCheckedValue("publish") || "archived";
-  const archived = publishChoice === "archived";
-  const published = publishChoice === "published";
+function renderThumbs() {
+  if (!thumbs) return; // safety
+  thumbs.innerHTML = "";
 
-  // This is what your product-management table reads to show Published/Draft
-  const visibility = published ? "published" : "draft";
+  selectedFiles.forEach((file, idx) => {
+    const wrap = document.createElement("div");
+    wrap.style.position = "relative";
+    wrap.style.borderRadius = "12px";
+    wrap.style.overflow = "hidden";
+    wrap.style.border = "1px solid rgba(0,0,0,0.10)";
+    wrap.style.background = "#fff";
+    wrap.style.aspectRatio = "1 / 1";
 
-  // Stock
-  let stock;
-  if (oneSizeOnly) {
-    stock = parseInt(stockOneEl.value || "0", 10);
-    if (Number.isNaN(stock)) stock = 0;
-  } else {
-    const stockObj = {};
-    const rows = sizesList.querySelectorAll(".addp-size-row");
-    rows.forEach((row) => {
-      const s = row.querySelector(".size-name")?.value?.trim();
-      const q = parseInt(row.querySelector(".size-qty")?.value || "0", 10);
-      if (!s) return;
-      stockObj[s] = Number.isNaN(q) ? 0 : q;
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    img.onload = () => URL.revokeObjectURL(img.src);
+    img.style.width = "100%";
+    img.style.height = "100%";
+    img.style.objectFit = "cover";
+    wrap.appendChild(img);
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.title = "Remove";
+    remove.style.position = "absolute";
+    remove.style.top = "6px";
+    remove.style.right = "6px";
+    remove.style.width = "26px";
+    remove.style.height = "26px";
+    remove.style.borderRadius = "999px";
+    remove.style.border = "none";
+    remove.style.cursor = "pointer";
+    remove.style.background = "rgba(0,0,0,0.65)";
+    remove.style.color = "#fff";
+    remove.style.fontSize = "18px";
+    remove.style.lineHeight = "26px";
+    remove.style.padding = "0";
+
+    remove.addEventListener("click", () => {
+      selectedFiles.splice(idx, 1);
+      renderThumbs();
     });
-    stock = stockObj;
-  }
 
-  // Validation (match how your existing modal behaves)
-  if (!name) return alert("Product name is required.");
-  if (Number.isNaN(price)) return alert("Please enter a valid price.");
-  if (!category) return alert("Category is required.");
-  if (!design) return alert("Design is required.");
+    wrap.appendChild(remove);
+    thumbs.appendChild(wrap);
+  });
+}
 
-  if (!oneSizeOnly && (!stock || Object.keys(stock).length === 0)) {
-    return alert("Please add at least one size with stock.");
-  }
-
-  setSaving(true);
+/* ---------------------------
+   Save to Firestore + Storage
+   (matches old schema your Products page expects)
+--------------------------- */
+saveBtn?.addEventListener("click", async () => {
+  if (isSaving) return;
 
   try {
-    // Keep your supporting collections in sync
-    await ensureNamedDoc("Categories", category);
-    await ensureNamedDoc("Designs", design);
+    isSaving = true;
+    setSavingState(true);
 
-    // Upload images (same style as your existing product-management)
-    const imageUrls = [];
-    for (const file of selectedFiles) {
-      const path = `products/${Date.now()}_${safeFileName(file.name)}`;
-      const fileRef = ref(storage, path);
+    const payload = await buildPayload();
+    const imageUrls = await uploadSelectedImages();
 
-      await uploadBytes(fileRef, file);
-      const url = await getDownloadURL(fileRef);
-      imageUrls.push(url);
-    }
+    payload.images = imageUrls;
 
-    // Final product payload (schema aligned to your existing system)
-    const productData = {
-      name,
-      price,
-      category,
-      design,
-      description,
-      images: imageUrls,
-      stock,
-      oneSizeOnly,
-      archived,
-      published,
-      visibility,
-      weight: Number.isNaN(weight) ? 0 : weight,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    // Keep Categories/Designs collections in sync (optional but helpful)
+    await ensureNamedDoc("Categories", payload.category);
+    if (payload.design) await ensureNamedDoc("Designs", payload.design);
 
-    await addDoc(collection(db, "Products"), productData);
+    await addDoc(collection(db, "Products"), payload);
 
-    // Done
+    alert("✅ Product created!");
     window.location.href = "/product-management/";
   } catch (err) {
     console.error("Add Product failed:", err);
-
-    // Make the popup actually useful
-    const msg =
-      err?.message ||
-      err?.code ||
-      "Unknown error. Check console for details.";
-
-    alert(`Couldn't save product:\n${msg}`);
+    alert("Couldn't save product. Open console for details.");
   } finally {
-    setSaving(false);
+    isSaving = false;
+    setSavingState(false);
   }
 });
+
+function setSavingState(on) {
+  if (!saveBtn) return;
+  saveBtn.disabled = on;
+  saveBtn.textContent = on ? "Saving..." : "Save Product";
+}
+
+async function buildPayload() {
+  const name = (nameEl?.value || "").trim();
+  const priceNum = Number(priceEl?.value);
+  const category = (categoryEl?.value || "").trim();
+  const sku = (skuEl?.value || "").trim();
+  const designRaw = (designEl?.value || "").trim();
+  const description = (descEl?.value || "").trim();
+  const weightKg = weightEl?.value === "" ? null : Number(weightEl.value);
+
+  const publish = document.querySelector('input[name="publish"]:checked')?.value || "draft";
+  const archived = publish === "draft";
+
+  const sizesMode = document.querySelector('input[name="sizes"]:checked')?.value || "one";
+  const oneSizeOnly = sizesMode === "one";
+
+  // Validation (keep it strict where it matters)
+  if (!name) throw new Error("Missing name");
+  if (!category) throw new Error("Missing category");
+  if (!description) throw new Error("Missing description");
+  if (Number.isNaN(priceNum) || priceNum <= 0) throw new Error("Invalid price");
+
+  // Design: optional in your UI; BUT your existing system expects a design string.
+  // So we default it if blank.
+  const design = designRaw || "General";
+
+  // Stock shape must match old schema:
+  // - oneSizeOnly true => stock: number
+  // - oneSizeOnly false => stock: { S: 10, M: 4, ... }
+  let stock;
+
+  if (oneSizeOnly) {
+    const qty = Number(stockOneEl?.value);
+    if (Number.isNaN(qty) || qty < 0) throw new Error("Invalid one-size stock");
+    stock = qty;
+  } else {
+    const obj = {};
+    const rows = Array.from(sizesList?.querySelectorAll(".addp-size-row") || []);
+    rows.forEach((r) => {
+      const s = (r.querySelector(".size-name")?.value || "").trim();
+      const q = Number(r.querySelector(".size-qty")?.value);
+      if (s && !Number.isNaN(q) && q >= 0) obj[s] = q;
+    });
+    if (Object.keys(obj).length === 0) throw new Error("Add at least one size with stock");
+    stock = obj;
+  }
+
+  // Images are uploaded separately; we require at least 1 selected
+  if (selectedFiles.length === 0) throw new Error("No images selected");
+
+  return {
+    name,
+    price: priceNum,
+    category,
+    design,
+    description,
+    images: [],
+
+    // old schema fields
+    oneSizeOnly,
+    stock,
+    archived,
+
+    // optional extras (won’t break old pages)
+    sku: sku || null,
+    weightKg: weightKg === null || Number.isNaN(weightKg) ? null : weightKg,
+
+    createdAt: serverTimestamp()
+  };
+}
+
+async function uploadSelectedImages() {
+  const urls = [];
+  for (const file of selectedFiles) {
+    const safeName = file.name.replace(/[^a-z0-9.]/gi, "_");
+    const path = `products/${Date.now()}_${safeName}`;
+    const imageRef = ref(storage, path);
+    await uploadBytes(imageRef, file);
+    const url = await getDownloadURL(imageRef);
+    urls.push(url);
+  }
+  return urls;
+}
+
+/* ---------------------------
+   Categories / Designs helper
+--------------------------- */
+function slugify(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+async function ensureNamedDoc(collectionName, name) {
+  const clean = (name || "").trim();
+  if (!clean) return;
+
+  const slug = slugify(clean);
+  const refDoc = doc(db, collectionName, slug);
+  const snap = await getDoc(refDoc);
+  if (snap.exists()) return;
+
+  await setDoc(refDoc, {
+    name: clean,
+    createdAt: serverTimestamp()
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (m) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  }[m]));
+}
