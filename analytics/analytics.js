@@ -1,5 +1,6 @@
 // /analytics/analytics.js
-import { app, auth, db } from "../firebase.js";
+import { app, auth, db } from "/firebase.js";
+
 import {
   collection,
   getDocs,
@@ -18,7 +19,7 @@ import {
 function setText(id, value, fallback = "—") {
   const el = document.getElementById(id);
   if (!el) return;
-  // IMPORTANT: use nullish checks so 0 shows as "0"
+  // use nullish checks so 0 shows as "0"
   el.textContent = (value ?? fallback);
 }
 
@@ -26,7 +27,6 @@ function toNumber(v) {
   if (v == null) return 0;
   if (typeof v === "number") return v;
   if (typeof v === "string") {
-    // strip currency + commas: "£1,234.56" -> 1234.56
     const n = parseFloat(v.replace(/[^\d.]/g, ""));
     return Number.isFinite(n) ? n : 0;
   }
@@ -35,15 +35,11 @@ function toNumber(v) {
 
 function formatGBP(n) {
   const num = toNumber(n);
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-  }).format(num);
+  return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(num);
 }
 
 /** ---------- Firestore totals ---------- */
 async function loadOrdersAndRevenue() {
-  // If your Orders collection is large later, we’ll replace this with an aggregated counter.
   const snap = await getDocs(collection(db, "Orders"));
 
   let ordersCount = 0;
@@ -53,14 +49,13 @@ async function loadOrdersAndRevenue() {
     ordersCount += 1;
     const d = doc.data() || {};
 
-    // Try common fields you’ve used historically (keeps schema compatibility)
-    // (Adjust later if you want revenue to exclude cancelled/refunded)
     revenue += toNumber(
       d.total ??
       d.totalAmount ??
       d.orderTotal ??
       d.amount ??
-      d.grandTotal
+      d.grandTotal ??
+      d.totalPrice
     );
   });
 
@@ -70,19 +65,19 @@ async function loadOrdersAndRevenue() {
 
 async function loadProductsCount() {
   const snap = await getDocs(collection(db, "Products"));
-  // If you only want non-archived, we can filter later.
   setText("totalProducts", snap.size, 0);
 }
 
 /** ---------- Cloud Function: GA4 visits summary ---------- */
 async function loadVisitsSummary() {
+  // If your functions are NOT in us-central1, set the region here:
+  // const functions = getFunctions(app, "europe-west2");
   const functions = getFunctions(app);
-  const fn = httpsCallable(functions, "getVisitsSummary");
 
+  const fn = httpsCallable(functions, "getVisitsSummary");
   const res = await fn(); // requires admin custom claim
   const data = res?.data || {};
 
-  // These are numbers (and may be 0) — show zeros correctly
   setText("visitsToday", data.today ?? 0, 0);
   setText("visitsThisMonth", data.monthToDate ?? 0, 0);
   setText("visitsAllTime", data.allTime ?? 0, 0);
@@ -90,7 +85,9 @@ async function loadVisitsSummary() {
 
 /** ---------- main ---------- */
 async function loadAnalytics() {
-  // Start with something sensible instead of dashes
+  console.log("[Analytics] boot");
+
+  // default visible values
   setText("totalOrders", 0);
   setText("totalRevenue", formatGBP(0));
   setText("totalProducts", 0);
@@ -100,16 +97,11 @@ async function loadAnalytics() {
   setText("visitsAllTime", 0);
 
   try {
-    await Promise.all([
-      loadOrdersAndRevenue(),
-      loadProductsCount(),
-    ]);
+    await Promise.all([loadOrdersAndRevenue(), loadProductsCount()]);
   } catch (err) {
     console.error("[Analytics] Firestore load failed:", err);
   }
 
-  // Visits summary requires admin claim, so wait for auth to be ready.
-  // If the token claim isn’t refreshed yet, this call will permission-deny.
   onAuthStateChanged(auth, async (user) => {
     if (!user) return;
 
@@ -117,7 +109,7 @@ async function loadAnalytics() {
       await loadVisitsSummary();
     } catch (err) {
       console.error("[Analytics] getVisitsSummary failed:", err);
-      // If this fails, keep visits at 0 (not dashes)
+      // keep visits as 0
       setText("visitsToday", 0);
       setText("visitsThisMonth", 0);
       setText("visitsAllTime", 0);
@@ -125,4 +117,9 @@ async function loadAnalytics() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", loadAnalytics);
+// run even if DOMContentLoaded already fired (module/caching edge cases)
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", loadAnalytics);
+} else {
+  loadAnalytics();
+}
