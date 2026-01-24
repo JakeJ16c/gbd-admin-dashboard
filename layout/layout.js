@@ -27,6 +27,7 @@ function getActiveKey() {
   if (p === "/" || p.endsWith("/index.html")) return "home";
   if (p.includes("/product-management")) return "product-management";
   if (p.includes("/order-management")) return "order-management";
+  if (p.includes("/analytics")) return "analytics";
   if (p.includes("/site-design")) return "site-design";
   if (p.includes("/settings")) return "settings";
 
