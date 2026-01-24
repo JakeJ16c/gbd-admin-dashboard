@@ -1,6 +1,4 @@
-// add-product/add-product.js
 import { db, storage } from "../firebase.js";
-
 import {
   collection,
   addDoc,
@@ -9,7 +7,6 @@ import {
   setDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-
 import {
   ref,
   uploadBytes,
@@ -20,21 +17,16 @@ import {
    Element helpers
 --------------------------- */
 const $ = (id) => document.getElementById(id);
-
 const cancelBtn = $("cancelBtn");
 const saveBtn = $("saveBtn");
-
 const sizeMode = $("sizeMode");
 const oneSizeStockWrap = $("oneSizeStockWrap");
 const multiSizeWrap = $("multiSizeWrap");
 const sizesList = $("sizesList");
 const addSizeBtn = $("addSizeBtn");
-
 const dropzone = $("dropzone");
 const imageInput = $("imageInput");
 const thumbs = $("thumbs");
-
-// Form fields (match your index.html ids)
 const nameEl = $("name");
 const priceEl = $("price");
 const categoryEl = $("category");
@@ -42,8 +34,30 @@ const skuEl = $("sku");
 const designEl = $("design");
 const descEl = $("desc");
 const weightEl = $("weight");
-
 const stockOneEl = $("stockOne");
+
+/* ---------------------------
+   Publish Later Button
+--------------------------- */
+const publishDraftNote = document.getElementById("publishDraftNote");
+
+function syncPublishNote() {
+  const publishValue =
+    document.querySelector('input[name="publish"]:checked')?.value;
+
+  // show note only when "Archive Product" (draft) is selected
+  if (publishDraftNote) {
+    publishDraftNote.style.display = publishValue === "draft" ? "block" : "none";
+  }
+}
+
+// run once on load
+syncPublishNote();
+
+// re-run whenever publish option changes
+document.querySelectorAll('input[name="publish"]').forEach((r) => {
+  r.addEventListener("change", syncPublishNote);
+});
 
 /* ---------------------------
    State
@@ -197,7 +211,6 @@ function renderThumbs() {
 
 /* ---------------------------
    Save to Firestore + Storage
-   (matches old schema your Products page expects)
 --------------------------- */
 saveBtn?.addEventListener("click", async () => {
   if (isSaving) return;
