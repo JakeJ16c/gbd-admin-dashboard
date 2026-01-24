@@ -1,99 +1,128 @@
-import { db } from "../firebase.js";
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+// /analytics/analytics.js
+import { app, auth, db } from "../firebase.js";
+import {
+  collection,
+  getDocs,
+} from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+import {
+  getFunctions,
+  httpsCallable,
+} from "https://www.gstatic.com/firebasejs/11.8.1/firebase-functions.js";
+
+import {
+  onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+
+/** ---------- tiny UI helpers ---------- */
+function setText(id, value, fallback = "—") {
+  const el = document.getElementById(id);
+  if (!el) return;
+  // IMPORTANT: use nullish checks so 0 shows as "0"
+  el.textContent = (value ?? fallback);
+}
 
 function toNumber(v) {
-  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
-  const n = parseFloat(String(v ?? "").replace(/[^0-9.-]+/g, ""));
-  return Number.isFinite(n) ? n : 0;
+  if (v == null) return 0;
+  if (typeof v === "number") return v;
+  if (typeof v === "string") {
+    // strip currency + commas: "£1,234.56" -> 1234.56
+    const n = parseFloat(v.replace(/[^\d.]/g, ""));
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
 }
 
-function sumOrderTotal(items) {
-  return (items || []).reduce((acc, item) => {
-    const price = toNumber(item.price);
-    const qty = toNumber(item.qty ?? item.quantity ?? 0);
-    return acc + price * qty;
-  }, 0);
+function formatGBP(n) {
+  const num = toNumber(n);
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+  }).format(num);
 }
 
-function formatGBP(amount) {
-  return `£${amount.toFixed(2)}`;
-}
+/** ---------- Firestore totals ---------- */
+async function loadOrdersAndRevenue() {
+  // If your Orders collection is large later, we’ll replace this with an aggregated counter.
+  const snap = await getDocs(collection(db, "Orders"));
 
-async function loadAnalytics() {
-  // ---- Orders + revenue + daily sales ----
-  const orderSnap = await getDocs(collection(db, "Orders"));
+  let ordersCount = 0;
+  let revenue = 0;
 
-  let totalOrders = 0;
-  let totalRevenue = 0;
-  const salesByDay = {}; // YYYY-MM-DD => revenue
+  snap.forEach((doc) => {
+    ordersCount += 1;
+    const d = doc.data() || {};
 
-  orderSnap.forEach((docSnap) => {
-    totalOrders++;
-
-    const data = docSnap.data();
-
-    const items = Array.isArray(data.items)
-      ? data.items
-      : Array.isArray(data.Items)
-        ? data.Items
-        : [];
-
-    const orderTotal = sumOrderTotal(items);
-    totalRevenue += orderTotal;
-
-    const dateObj = data.createdAt?.toDate ? data.createdAt.toDate() : null;
-    if (dateObj) {
-      const dayKey = dateObj.toISOString().slice(0, 10); // YYYY-MM-DD
-      salesByDay[dayKey] = (salesByDay[dayKey] || 0) + orderTotal;
-    }
+    // Try common fields you’ve used historically (keeps schema compatibility)
+    // (Adjust later if you want revenue to exclude cancelled/refunded)
+    revenue += toNumber(
+      d.total ??
+      d.totalAmount ??
+      d.orderTotal ??
+      d.amount ??
+      d.grandTotal
+    );
   });
 
-  // ---- Products count ----
-  const productSnap = await getDocs(collection(db, "Products"));
-  const totalProducts = productSnap.size;
+  setText("totalOrders", ordersCount, 0);
+  setText("totalRevenue", formatGBP(revenue), formatGBP(0));
+}
 
-  // ---- Paint totals ----
-  document.getElementById("totalOrders").textContent = totalOrders;
-  document.getElementById("totalRevenue").textContent = formatGBP(totalRevenue);
-  document.getElementById("totalProducts").textContent = totalProducts;
+async function loadProductsCount() {
+  const snap = await getDocs(collection(db, "Products"));
+  // If you only want non-archived, we can filter later.
+  setText("totalProducts", snap.size, 0);
+}
 
-  // Visits placeholders (wired in Step 2)
-  document.getElementById("visitsToday").textContent = "—";
-  document.getElementById("visitsMonth").textContent = "—";
-  document.getElementById("visitsAllTime").textContent = "—";
+/** ---------- Cloud Function: GA4 visits summary ---------- */
+async function loadVisitsSummary() {
+  const functions = getFunctions(app);
+  const fn = httpsCallable(functions, "getVisitsSummary");
 
-  // ---- Simple sales chart (last 14 days) ----
-  const allDays = Object.keys(salesByDay).sort(); // YYYY-MM-DD sorts correctly
-  const lastDays = allDays.slice(-14);
+  const res = await fn(); // requires admin custom claim
+  const data = res?.data || {};
 
-  const labels = lastDays.map((d) =>
-    new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" })
-  );
+  // These are numbers (and may be 0) — show zeros correctly
+  setText("visitsToday", data.today ?? 0, 0);
+  setText("visitsThisMonth", data.monthToDate ?? 0, 0);
+  setText("visitsAllTime", data.allTime ?? 0, 0);
+}
 
-  const values = lastDays.map((d) => salesByDay[d] || 0);
+/** ---------- main ---------- */
+async function loadAnalytics() {
+  // Start with something sensible instead of dashes
+  setText("totalOrders", 0);
+  setText("totalRevenue", formatGBP(0));
+  setText("totalProducts", 0);
 
-  const canvas = document.getElementById("salesChart");
-  if (canvas && window.Chart) {
-    const ctx = canvas.getContext("2d");
-    new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels,
-        datasets: [
-          {
-            label: "Sales (£)",
-            data: values
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    });
+  setText("visitsToday", 0);
+  setText("visitsThisMonth", 0);
+  setText("visitsAllTime", 0);
+
+  try {
+    await Promise.all([
+      loadOrdersAndRevenue(),
+      loadProductsCount(),
+    ]);
+  } catch (err) {
+    console.error("[Analytics] Firestore load failed:", err);
   }
+
+  // Visits summary requires admin claim, so wait for auth to be ready.
+  // If the token claim isn’t refreshed yet, this call will permission-deny.
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+
+    try {
+      await loadVisitsSummary();
+    } catch (err) {
+      console.error("[Analytics] getVisitsSummary failed:", err);
+      // If this fails, keep visits at 0 (not dashes)
+      setText("visitsToday", 0);
+      setText("visitsThisMonth", 0);
+      setText("visitsAllTime", 0);
+    }
+  });
 }
 
 document.addEventListener("DOMContentLoaded", loadAnalytics);
