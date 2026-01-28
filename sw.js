@@ -14,7 +14,7 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const CACHE_NAME = `admin-cache-${CACHE_VERSION}`;
 
 const toUrl = (path) => new URL(path, self.registration.scope).toString();
@@ -46,7 +46,7 @@ const PRECACHE_URLS = [
   './order-management/order-management-styles.css',
 
   './analytics/index.html',
-  './analytics/analytics.js',
+  './analytics/metrics.js',
 
   './settings/index.html',
   './settings/settings-styles.css',
