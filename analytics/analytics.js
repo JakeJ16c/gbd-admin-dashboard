@@ -1,125 +1,115 @@
-// /analytics/analytics.js
+// analytics/analytics.js (UPDATED)
+
 import { app, auth, db } from "/firebase.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-functions.js";
 
-import {
-  collection,
-  getDocs,
-} from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-
-import {
-  getFunctions,
-  httpsCallable,
-} from "https://www.gstatic.com/firebasejs/11.8.1/firebase-functions.js";
-
-import {
-  onAuthStateChanged,
-} from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-
-// ✅ proves the correct file is running
 console.log("[Analytics] analytics.js loaded at:", window.location.pathname);
 
-/** ---------- tiny UI helpers ---------- */
 function setText(id, value, fallback = "—") {
   const el = document.getElementById(id);
   if (!el) return;
-  // IMPORTANT: use nullish checks so 0 shows as "0"
-  el.textContent = (value ?? fallback);
+  el.textContent = value ?? fallback;
 }
 
-function toNumber(v) {
-  if (v == null) return 0;
-  if (typeof v === "number") return v;
-  if (typeof v === "string") {
-    const n = parseFloat(v.replace(/[^\d.]/g, ""));
-    return Number.isFinite(n) ? n : 0;
-  }
-  return 0;
+function asNumber(x) {
+  const n = Number(x);
+  return Number.isFinite(n) ? n : 0;
 }
 
-function formatGBP(n) {
-  const num = toNumber(n);
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-  }).format(num);
+function calcOrderTotal(order) {
+  // Match your order-management.js logic:
+  const items = Array.isArray(order.items)
+    ? order.items
+    : Array.isArray(order.Items)
+      ? order.Items
+      : [];
+
+  const itemsTotal = items.reduce((acc, item) => {
+    const price = asNumber(item.price);
+    const qty = asNumber(item.qty ?? item.quantity ?? 0);
+    return acc + price * qty;
+  }, 0);
+
+  // Optional fields if you add them later:
+  const delivery = asNumber(order.deliveryCost ?? order.delivery ?? order.shipping ?? 0);
+  const discount = asNumber(order.discountAmount ?? order.discount ?? 0);
+
+  // If you ever start storing a real total, use it when present & > 0
+  const storedTotal = asNumber(order.total ?? order.amount ?? order.totalAmount ?? 0);
+  if (storedTotal > 0) return storedTotal;
+
+  return Math.max(0, itemsTotal + delivery - discount);
 }
 
-/** ---------- Firestore totals ---------- */
-async function loadOrdersAndRevenue() {
-  const snap = await getDocs(collection(db, "Orders"));
-
-  let ordersCount = 0;
-  let revenue = 0;
-
-  snap.forEach((doc) => {
-    ordersCount += 1;
-    const d = doc.data() || {};
-    revenue += toNumber(
-      d.total ??
-      d.totalAmount ??
-      d.orderTotal ??
-      d.amount ??
-      d.grandTotal
-    );
-  });
-
-  setText("totalOrders", ordersCount, 0);
-  setText("totalRevenue", formatGBP(revenue), formatGBP(0));
-}
-
-async function loadProductsCount() {
-  const snap = await getDocs(collection(db, "Products"));
-  setText("totalProducts", snap.size, 0);
-}
-
-/** ---------- Cloud Function: GA4 visits summary ---------- */
 async function loadVisitsSummary() {
-  // If your callable functions are NOT us-central1, set region here:
-  // const functions = getFunctions(app, "europe-west2");
-  const functions = getFunctions(app);
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not signed in.");
 
-  const fn = httpsCallable(functions, "getVisitsSummary");
-  const res = await fn(); // requires admin claim
-  const data = res?.data || {};
+    // Refresh token to pick up admin claim
+    await user.getIdToken(true);
 
-  setText("visitsToday", data.today ?? 0, 0);
-  setText("visitsThisMonth", data.monthToDate ?? 0, 0);
-  setText("visitsAllTime", data.allTime ?? 0, 0);
+    const functions = getFunctions(app);
+    const getVisitsSummary = httpsCallable(functions, "getVisitsSummary");
+    const res = await getVisitsSummary();
+    const data = res.data || {};
+
+    setText("visitsToday", data.today ?? 0, 0);
+    setText("visitsMonth", data.monthToDate ?? 0, 0);
+    setText("visitsAllTime", data.allTime ?? 0, 0);
+
+    console.log("[Analytics] Visits summary:", data);
+  } catch (err) {
+    console.warn("[Analytics] getVisitsSummary failed:", err);
+    // Keep placeholders at 0 if callable fails
+    setText("visitsToday", 0, 0);
+    setText("visitsMonth", 0, 0);
+    setText("visitsAllTime", 0, 0);
+  }
 }
 
-/** ---------- main ---------- */
 async function loadAnalytics() {
-  // show 0s immediately (so you know script ran)
+  // Set safe defaults immediately (so you never stay on "—")
   setText("totalOrders", 0);
-  setText("totalRevenue", formatGBP(0));
+  setText("totalRevenue", "£0.00");
   setText("totalProducts", 0);
-
   setText("visitsToday", 0);
-  setText("visitsThisMonth", 0);
+  setText("visitsMonth", 0);
   setText("visitsAllTime", 0);
 
   try {
-    await Promise.all([
-      loadOrdersAndRevenue(),
-      loadProductsCount(),
+    const [ordersSnap, productsSnap] = await Promise.all([
+      getDocs(collection(db, "Orders")),
+      getDocs(collection(db, "Products")),
     ]);
+
+    const orders = ordersSnap.docs.map((d) => d.data());
+    const ordersCount = orders.length;
+
+    const totalRevenue = orders.reduce((acc, o) => acc + calcOrderTotal(o), 0);
+
+    setText("totalOrders", ordersCount, 0);
+    setText("totalRevenue", `£${totalRevenue.toFixed(2)}`, "£0.00");
+    setText("totalProducts", productsSnap.size, 0);
+
+    console.log("[Analytics] Totals:", { ordersCount, totalRevenue, products: productsSnap.size });
+
+    // Visits (admin-only callable)
+    await loadVisitsSummary();
   } catch (err) {
-    console.error("[Analytics] Firestore load failed:", err);
+    console.error("[Analytics] loadAnalytics failed:", err);
   }
-
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) return;
-
-    try {
-      await loadVisitsSummary();
-    } catch (err) {
-      console.error("[Analytics] getVisitsSummary failed:", err);
-      // keep visits at 0
-      setText("visitsToday", 0);
-      setText("visitsThisMonth", 0);
-      setText("visitsAllTime", 0);
-    }
-  });
 }
 
-document.addEventListener("DOMContentLoaded", loadAnalytics);
+// ✅ Don’t rely purely on DOMContentLoaded timing
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", loadAnalytics, { once: true });
+} else {
+  loadAnalytics();
+}
+
+// Also re-run visits summary when auth becomes ready
+auth.onAuthStateChanged?.((user) => {
+  if (user) loadVisitsSummary();
+});
