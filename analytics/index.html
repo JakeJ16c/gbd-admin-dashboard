@@ -29,38 +29,48 @@
 
       <main class="page-content">
         <div class="analytics-container">
-          <div class="analytics-summary">
-
-            <div class="metric">
-              <h3>Total Orders</h3>
-              <p id="totalOrders">—</p>
-            </div>
-
-            <div class="metric">
-              <h3>Total Revenue</h3>
-              <p id="totalRevenue">—</p>
-            </div>
-
-            <div class="metric">
-              <h3>Total Products</h3>
-              <p id="totalProducts">—</p>
-            </div>
-
-            <div class="metric">
-              <h3>Visits Today</h3>
-              <p id="visitsToday">—</p>
-            </div>
-
-            <div class="metric">
-              <h3>Visits This Month</h3>
-              <p id="visitsThisMonth">—</p>
-            </div>
-
-            <div class="metric">
-              <h3>Visits All-time</h3>
-              <p id="visitsAllTime">—</p>
-            </div>
-
+          <div class="metrics-grid">
+            <section class="metric-card">
+              <div class="metric-card-header">Total Orders</div>
+              <div class="metric-card-body">
+                <div class="metric-value" id="totalOrders">—</div>
+              </div>
+            </section>
+          
+            <section class="metric-card">
+              <div class="metric-card-header">Total Revenue</div>
+              <div class="metric-card-body">
+                <div class="metric-value" id="totalRevenue">—</div>
+              </div>
+            </section>
+          
+            <section class="metric-card">
+              <div class="metric-card-header">Total Products</div>
+              <div class="metric-card-body">
+                <div class="metric-value" id="totalProducts">—</div>
+              </div>
+            </section>
+          
+            <section class="metric-card">
+              <div class="metric-card-header">Visits Today</div>
+              <div class="metric-card-body">
+                <div class="metric-value" id="visitsToday">—</div>
+              </div>
+            </section>
+          
+            <section class="metric-card">
+              <div class="metric-card-header">Visits This Month</div>
+              <div class="metric-card-body">
+                <div class="metric-value" id="visitsMonth">—</div>
+              </div>
+            </section>
+          
+            <section class="metric-card">
+              <div class="metric-card-header">Visits All-time</div>
+              <div class="metric-card-body">
+                <div class="metric-value" id="visitsAllTime">—</div>
+              </div>
+            </section>
           </div>
 
           <canvas id="salesChart" height="200"></canvas>
