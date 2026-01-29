@@ -27,51 +27,57 @@ exports.bootstrapAdmin = onCall(
     },
 );
 
-const { BetaAnalyticsDataClient } = require("@google-analytics/data");
+const {BetaAnalyticsDataClient} = require("@google-analytics/data");
+const analyticsClient = new BetaAnalyticsDataClient();
 
-// Uses the Cloud Functions service account automatically (ADC)
-const ga4 = new BetaAnalyticsDataClient();
+const GA4_PROPERTY_ID = "490467479";
 
-function toYMD(d) {
-  return d.toISOString().slice(0, 10);
-}
-
-async function runSessionsReport(propertyId, startDate, endDate) {
-  const [res] = await ga4.runReport({
-    property: `properties/${propertyId}`,
-    dateRanges: [{ startDate, endDate }],
-    metrics: [{ name: "sessions" }],
+async function runMetric(property, metricName, startDate, endDate) {
+  const [resp] = await analyticsClient.runReport({
+    property,
+    dateRanges: [{startDate, endDate}],
+    metrics: [{name: metricName}],
   });
 
-  const v = res.rows?.[0]?.metricValues?.[0]?.value;
-  return Number(v || 0);
+  const v = resp?.rows?.[0]?.metricValues?.[0]?.value ?? "0";
+  return Number(v);
 }
 
-exports.getVisitsSummary = onCall(async (request) => {
-  // Admin only
-  const isAdmin = !!(request.auth?.token?.admin === true);
-  if (!isAdmin) throw new HttpsError("permission-denied", "Admin only.");
+exports.getVisitsSummary = onCall({region: "us-central1"}, async (request) => {
+  try {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
 
-  // ✅ Put your GA4 PROPERTY ID here (numbers only)
-  // Example: if GA4 shows "properties/123456789" then use "123456789"
-  const PROPERTY_ID = "490467479";
+    const isAdmin = request.auth?.token?.admin === true;
+    if (!isAdmin) {
+      throw new HttpsError("permission-denied", "Admin only.");
+    }
 
-  const now = new Date();
-  const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    if (!GA4_PROPERTY_ID || !/^\d+$/.test(GA4_PROPERTY_ID)) {
+      throw new HttpsError("failed-precondition", "GA4_PROPERTY_ID is missing/invalid.");
+    }
 
-  const today = "today";
-  const monthStart = toYMD(startOfMonth);
+    const property = `properties/${GA4_PROPERTY_ID}`;
 
-  const todaySessions = await runSessionsReport(PROPERTY_ID, today, today);
-  const monthSessions = await runSessionsReport(PROPERTY_ID, monthStart, "today");
+    // Today
+    const today = await runMetric(property, "sessions", "today", "today");
 
-  // “All time” — set a very early date (GA4 will clamp to first data available)
-  const allTimeSessions = await runSessionsReport(PROPERTY_ID, "2005-01-01", "today");
+    // Month-to-date (UTC first day of month)
+    const now = new Date();
+    const startMonth =
+      `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-01`;
+    const monthToDate = await runMetric(property, "sessions", startMonth, "today");
 
-  return {
-    today: todaySessions,
-    monthToDate: monthSessions,
-    allTime: allTimeSessions,
-  };
+    // All-time (set a very early start date)
+    const allTime = await runMetric(property, "sessions", "2000-01-01", "today");
+
+    return {today, monthToDate, allTime};
+  } catch (err) {
+    console.error("getVisitsSummary error:", err);
+
+    // ✅ This makes the REAL error show in your browser console
+    const msg = err?.message || String(err);
+    throw new HttpsError("internal", `GA4 failed: ${msg}`);
+  }
 });
-
