@@ -70,7 +70,7 @@ exports.getVisitsSummary = onCall({region: "us-central1"}, async (request) => {
     const monthToDate = await runMetric(property, "sessions", startMonth, "today");
 
     // All-time (set a very early start date)
-    const allTime = await runMetric(property, "sessions", "2000-01-01", "today");
+    const allTime = await runMetric(property, "sessions", "2025-01-01", "today");
 
     return {today, monthToDate, allTime};
   } catch (err) {
