@@ -1,0 +1,55 @@
+/* Analytics Page Styles */
+.analytics-container {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+@media (max-width: 900px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metric-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.metric-card-header {
+  background: #f3f4f6;
+  padding: 14px 18px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--electric-blue);
+  text-align: center;
+}
+
+.metric-card-body {
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-value {
+  font-size: 34px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1;
+}
