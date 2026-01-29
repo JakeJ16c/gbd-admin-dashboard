@@ -85,16 +85,13 @@
 }
 
 .addp-back{
-  display:inline-block;
-  font-weight:800;
-  text-decoration:none;
+  font-size:25px;
   color:#111;
-  opacity:0.8;
-  margin-bottom: 8px;
 }
 
 .addp-header h1{
   margin: 0;
+  margin-top: 20px;
   font-size: 26px;
   font-weight: 500;
   color:#111;
